@@ -373,8 +373,10 @@ defineExpose({
 
   .captcha-image {
     flex-shrink: 0;
-    width: 120px;
     height: 48px;
+    width: auto;
+    min-width: 80px;
+    max-width: 120px;
     border: 1px solid var(--el-border-color);
     border-radius: 4px;
     overflow: hidden;
@@ -420,9 +422,13 @@ defineExpose({
   }
 
   .captcha-wrapper {
-    .captcha-image {
-      width: 100px;
-    }
+    gap: 8px;
+  }
+}
+
+@media (max-width: 420px) {
+  .captcha-wrapper {
+    gap: 6px;
   }
 }
 </style>

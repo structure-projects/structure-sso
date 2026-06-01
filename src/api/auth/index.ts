@@ -41,6 +41,30 @@ export function sendSmsCodeApi(data: SendSmsCodeRequest): Promise<void> {
   }) as Promise<void>;
 }
 
+export interface RegisterRequest {
+  username: string;
+  password: string;
+  phone: string;
+  code: string;
+}
+
+export interface RegisterResponse {
+  success: boolean;
+  message?: string;
+}
+
+export function registerApi(data: RegisterRequest): Promise<RegisterResponse> {
+  return request({
+    url: "/api/auth/register",
+    method: "post",
+    data: data,
+  }) as Promise<RegisterResponse>;
+}
+
+export function getSmsCodeApi(phone: string): Promise<void> {
+  return sendSmsCodeApi({ phone, codeType: 'register' });
+}
+
 export interface CaptchaResponse {
   key: string;
   image: string;
@@ -51,6 +75,21 @@ export function getCaptchaApi(): Promise<CaptchaResponse> {
     url: "/api/captcha/get",
     method: "get",
   }) as Promise<CaptchaResponse>;
+}
+
+export interface QRCodeLoginRequest {
+  authCode: string;
+  codeVerifier: string;
+  state: string;
+  qrcodeId: string;
+}
+
+export function qrcodeLoginApi(data: QRCodeLoginRequest): Promise<LoginResult> {
+  return request({
+    url: "/api/auth/qrcode-login",
+    method: "post",
+    data: data,
+  }) as Promise<LoginResult>;
 }
 
 export function phoneLoginApi(data: PhoneLoginRequest): Promise<LoginResult> {

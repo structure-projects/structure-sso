@@ -38,11 +38,14 @@
         </el-form-item>
 
         <el-form-item prop="agreement" class="agreement-item">
-          <el-checkbox v-model="registerForm.agreement">
+          <el-checkbox 
+            v-model="registerForm.agreement"
+            @click.prevent="handleAgreementClick"
+          >
             我已阅读并同意
-            <a href="#" class="agreement-link">《用户协议》</a>
+            <a href="javascript:void(0)" class="agreement-link" @click.stop="handleOpenAgreement('user')">《用户协议》</a>
             和
-            <a href="#" class="agreement-link">《隐私政策》</a>
+            <a href="javascript:void(0)" class="agreement-link" @click.stop="handleOpenAgreement('privacy')">《隐私政策》</a>
           </el-checkbox>
         </el-form-item>
 
@@ -55,13 +58,21 @@
       </el-form>
     </div>
 
-    <div class="card-footer">
+    <div class="card-footer" v-if="showFooter">
       <div class="login-link">
         已有账户？
         <a href="javascript:void(0)" @click="handleGoLogin">立即登录</a>
       </div>
     </div>
   </div>
+
+  <!-- 协议弹窗 -->
+  <AgreementModal
+    v-model="agreementModalVisible"
+    :type="agreementType"
+    :merged="true"
+    @closed="handleAgreementModalClosed"
+  />
 </template>
 
 <script setup lang="ts">
@@ -71,6 +82,7 @@ import { ElMessage } from 'element-plus';
 import { User, Phone, Lock, ChatDotRound } from '@element-plus/icons-vue';
 import type { FormInstance, FormRules } from 'element-plus';
 import { getSmsCodeApi, registerApi } from '@/api/auth';
+import AgreementModal from './components/AgreementModal.vue';
 
 const router = useRouter();
 const route = useRoute();
@@ -82,6 +94,9 @@ const registering = ref(false);
 const sendingCode = ref(false);
 const codeCountdown = ref(0);
 const phoneValid = ref(false);
+const agreementModalVisible = ref(false);
+const agreementType = ref<'user' | 'privacy'>('user');
+const showFooter = ref(true);
 
 const registerForm = reactive({
   username: '',
@@ -214,10 +229,32 @@ const handleGoLogin = () => {
   router.push(loginUrl.value);
 };
 
+const handleOpenAgreement = (type: 'user' | 'privacy') => {
+  agreementType.value = type;
+  agreementModalVisible.value = true;
+};
+
+const handleAgreementClick = () => {
+  if (!registerForm.agreement) {
+    agreementModalVisible.value = true;
+  } else {
+    registerForm.agreement = false;
+  }
+};
+
+const handleAgreementModalClosed = () => {
+  registerForm.agreement = true;
+};
+
 onMounted(() => {
   const loginParam = route.query.login as string;
   if (loginParam && loginParam.trim()) {
     loginUrl.value = loginParam;
+  }
+  
+  const hideFooter = route.query.hideFooter as string;
+  if (hideFooter === 'true' || hideFooter === '1') {
+    showFooter.value = false;
   }
 });
 </script>
@@ -230,6 +267,7 @@ onMounted(() => {
   overflow: hidden;
   width: 100%;
   max-width: 400px;
+  margin: 0 auto;
 }
 
 html.dark .register-card {
@@ -257,6 +295,7 @@ html.dark .register-card {
 
 .card-body {
   padding: 24px 32px;
+  margin: 0 auto;
 }
 
 .card-footer {

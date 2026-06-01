@@ -240,8 +240,8 @@ const handleRegister = async () => {
         await new Promise(resolve => setTimeout(resolve, 1500));
         ElMessage.success('注册成功！');
         emit('register-success');
-      } catch (error) {
-        ElMessage.error('注册失败，请重试');
+      } catch (error: any) {
+        ElMessage.error(error?.message || '注册失败，请重试');
       } finally {
         registering.value = false;
       }

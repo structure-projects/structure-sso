@@ -15,13 +15,42 @@ const routes = [
     ],
   },
   {
-    path: "/register",
-    component: LoginLayout,
+    path: "/login/account",
     meta: { hidden: true },
     children: [
       {
         path: "",
-        component: () => import("@/views/login/Index.vue"),
+        component: () => import("@/views/login/AccountLoginPage.vue"),
+      },
+    ],
+  },
+  {
+    path: "/login/phone",
+    meta: { hidden: true },
+    children: [
+      {
+        path: "",
+        component: () => import("@/views/login/PhoneLoginPage.vue"),
+      },
+    ],
+  },
+  {
+    path: "/login/qrcode",
+    meta: { hidden: true },
+    children: [
+      {
+        path: "",
+        component: () => import("@/views/login/QRCodeLoginPage.vue"),
+      },
+    ],
+  },
+    {
+    path: "/register",
+    meta: { hidden: true },
+    children: [
+      {
+        path: "",
+        component: () => import("@/views/login/Register.vue"),
       },
     ],
   },

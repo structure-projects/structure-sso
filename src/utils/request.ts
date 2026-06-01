@@ -97,10 +97,6 @@ service.interceptors.response.use(
         await handleTokenExpired();
         return Promise.reject(error);
       }
-
-      if (code !== "INVALID_AUTHENTICATION" && code !== "NOT_LOGGED_IN") {
-        ElMessage.error(message || "系统出错");
-      }
     }
     return Promise.reject(error.message);
   },

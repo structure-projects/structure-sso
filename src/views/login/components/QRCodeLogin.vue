@@ -94,6 +94,7 @@ const statusText = computed(() => {
 async function generateQRCode() {
   loading.value = true;
   isExpired.value = false;
+  qrcodeUrl.value = '';
   
   try {
     const config = getOAuthConfig();
@@ -106,11 +107,14 @@ async function generateQRCode() {
     const loginUrl = new URL(window.location.origin + '/phone-login');
     loginUrl.searchParams.set('state', state.value);
     loginUrl.searchParams.set('code_challenge', codeChallenge);
+    loginUrl.searchParams.set('code_challenge_method', 'S256');
     loginUrl.searchParams.set('qrcode_id', qrcodeId.value);
     loginUrl.searchParams.set('client_id', config.clientId);
     loginUrl.searchParams.set('redirect_uri', config.redirectUri);
+    loginUrl.searchParams.set('response_type', 'code');
+    loginUrl.searchParams.set('scope', config.scope);
     
-    qrcodeUrl.value = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(loginUrl.toString())}`;
+    qrcodeUrl.value = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(loginUrl.toString())}&t=${Date.now()}`;
     
     localStorage.setItem('qr_code_verifier', codeVerifier.value);
     localStorage.setItem('qr_state', state.value);

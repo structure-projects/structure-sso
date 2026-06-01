@@ -71,6 +71,7 @@ import { ref, markRaw, computed } from 'vue';
 import { useRoute } from 'vue-router';
 import router from '@/router';
 import { useUserStore, usePermissionStore } from '@/store';
+import { ElMessage } from 'element-plus';
 import { FullScreen, Phone, User, Share, UserFilled } from '@element-plus/icons-vue';
 import { LoginData } from '@/api/auth/types';
 import { RouteRecordRaw } from 'vue-router';
@@ -157,6 +158,18 @@ async function handleLogin(data?: any) {
         };
         await userStore.login(loginData);
       }
+      
+      const needAuth = redirectUrl.startsWith('http://') || redirectUrl.startsWith('https://');
+      
+      router.push({
+        path: '/login/success',
+        query: {
+          redirect: redirectUrl,
+          needAuth: needAuth ? 'true' : 'false',
+        },
+      });
+    } catch (error: any) {
+      ElMessage.error(error?.message || '登录失败，请重试');
     } finally {
       isLoggingIn.value = false;
     }

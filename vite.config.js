@@ -25,10 +25,10 @@ export default defineConfig(({ mode }) => {
     server: {
       port: Number(env.VITE_APP_PORT) || 3000,
       proxy: {
-        [env.VITE_APP_BASE_API]: {
+        [env.VITE_APP_BASE_API || '/web-api']: {
           target: 'http://localhost:9000/',
           changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/web-api/, '')
+          rewrite: (path) => path.replace(new RegExp(`^${env.VITE_APP_BASE_API || '/web-api'}`), '')
         }
       },
       watch: {

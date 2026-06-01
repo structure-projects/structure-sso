@@ -9,7 +9,7 @@
       <QRCodeLogin @login="handleLogin" :loading="isLoading" />
     </div>
 
-    <div class="card-footer">
+    <div class="card-footer" v-if="showFooter">
       <div class="quick-links">
         <router-link to="/login/account">账号登录</router-link>
         <span>|</span>
@@ -22,35 +22,56 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import QRCodeLogin from './components/QRCodeLogin.vue';
 import { useUserStoreHook } from '@/store/modules/user';
-import { LoginData } from '@/api/auth/types';
+import { qrcodeLoginApi } from '@/api/auth';
 
 const router = useRouter();
 const route = useRoute();
 const userStore = useUserStoreHook();
 const isLoading = ref(false);
+const showFooter = ref(true);
 
 const handleLogin = async (data: any) => {
+  const redirectUrl = (route.query.redirect as string) || '/';
+  userStore.saveRedirectUrl(redirectUrl);
+  
   isLoading.value = true;
   try {
-    // 这里假设扫码登录会返回用户名密码，或者需要特殊处理
-    // 暂时使用与账号登录相同的逻辑
-    const loginData: LoginData = {
-      username: data.username || 'admin',
-      password: data.password || 'admin123',
-    };
+    await qrcodeLoginApi({
+      authCode: data.authCode,
+      codeVerifier: data.codeVerifier,
+      state: data.state,
+      qrcodeId: data.qrcodeId,
+    });
     
-    await userStore.login(loginData);
+    userStore.isLogin = true;
+    
+    const needAuth = redirectUrl.startsWith('http://') || redirectUrl.startsWith('https://');
+    
+    router.push({
+      path: '/login/success',
+      query: {
+        redirect: redirectUrl,
+        needAuth: needAuth ? 'true' : 'false',
+      },
+    });
   } catch (error) {
     ElMessage.error('登录失败，请重试');
   } finally {
     isLoading.value = false;
   }
 };
+
+onMounted(() => {
+  const hideFooter = route.query.hideFooter as string;
+  if (hideFooter === 'true' || hideFooter === '1') {
+    showFooter.value = false;
+  }
+});
 </script>
 
 <style lang="scss" scoped>
@@ -59,6 +80,9 @@ const handleLogin = async (data: any) => {
   border-radius: 16px;
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
   overflow: hidden;
+  width: 100%;
+  max-width: 400px;
+  margin: 0 auto;
 }
 
 html.dark .login-card {
@@ -87,6 +111,7 @@ html.dark .login-card {
 .card-body {
   padding: 24px 32px;
   width: 360px;
+  margin: 0 auto;
 }
 
 .card-footer {
