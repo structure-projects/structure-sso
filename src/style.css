@@ -1,0 +1,42 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body, #app {
+  height: 100%;
+  width: 100%;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-size: 14px;
+  color: var(--text-primary, #1e293b);
+  background-color: var(--background-color, #f8fafc);
+}
+
+/* 主题配色CSS变量 */
+:root {
+  /* 主色调 */
+  --primary-color: #3b82f6;
+  --secondary-color: #2563eb;
+  --background-color: #f8fafc;
+  --card-color: #ffffff;
+  
+  /* 中性色 */
+  --text-primary: #1e293b;
+  --text-secondary: #64748b;
+  --text-light: #94a3b8;
+  --border-color: #e2e8f0;
+  --divider-color: #f1f5f9;
+  --shadow-color: rgba(0, 0, 0, 0.05);
+  
+  /* 功能色 */
+  --success-color: #10b981;
+  --warning-color: #f59e0b;
+  --error-color: #ef4444;
+  --info-color: #3b82f6;
+}
+
+/* 可以通过JavaScript动态更新这些变量 */

@@ -1,0 +1,3 @@
+export { setupElIcons } from "./icons";
+export * from "./i18n";
+export * from "./permission";
