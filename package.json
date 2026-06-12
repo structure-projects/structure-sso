@@ -9,16 +9,17 @@
   },
   "dependencies": {
     "@element-plus/icons-vue": "^2.3.1",
-    "@popperjs/core": "^2.11.8",
     "@fingerprintjs/fingerprintjs": "^4.4.1",
+    "@popperjs/core": "^2.11.8",
+    "@structure-projects/gateway-client": "^1.0.1",
     "axios": "^1.16.0",
     "element-plus": "^2.14.0",
     "nprogress": "^0.2.0",
     "pinia": "^2.1.7",
+    "uuid": "^9.0.0",
     "vue": "^3.4.21",
     "vue-i18n": "9.9.1",
-    "vue-router": "^4.3.0",
-    "uuid": "^9.0.0"
+    "vue-router": "^4.3.0"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.0.4",

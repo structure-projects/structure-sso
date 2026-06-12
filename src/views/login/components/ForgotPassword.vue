@@ -63,7 +63,7 @@ ForgotPassword.vue - 忘记密码页面组件
           </el-input>
         </el-form-item>
 
-        <el-form-item prop="smsCode">
+        <!-- <el-form-item prop="smsCode">
           <div class="sms-wrapper">
             <el-input
               v-model="phoneForm.smsCode"
@@ -81,7 +81,7 @@ ForgotPassword.vue - 忘记密码页面组件
               {{ countdown > 0 ? `${countdown}${$t('forgotPassword.countdownSuffix')}` : $t('common.getSmsCode') }}
             </el-button>
           </div>
-        </el-form-item>
+        </el-form-item> -->
 
         <el-form-item>
           <el-button
@@ -92,7 +92,7 @@ ForgotPassword.vue - 忘记密码页面组件
             :disabled="!canVerifyPhone"
             @click="handleVerifyPhone"
           >
-            {{ $t('forgotPassword.nextStep') }}
+            {{ $t('common.nextStep') }}
           </el-button>
         </el-form-item>
       </el-form>
@@ -225,6 +225,8 @@ import {
 import type { FormInstance, FormRules } from 'element-plus';
 import { ElMessage } from 'element-plus';
 import router from '@/router';
+import { sendSmsCodeApi, resetPasswordApi } from '@/api/auth';
+import { md5 } from '@/utils/crypto';
 
 // 获取组件实例以访问 $t
 const { proxy } = getCurrentInstance()!;
@@ -248,9 +250,9 @@ const emit = defineEmits<{
 
 // 步骤定义
 const steps = [
-  { label: proxy?.$t('forgotPassword.stepVerifyPhone') },
-  { label: proxy?.$t('forgotPassword.stepSetPassword') },
-  { label: proxy?.$t('forgotPassword.stepComplete') }
+  { label: proxy?.$t('forgotPassword.stepVerifyPhone') || '验证手机号' },
+  { label: proxy?.$t('forgotPassword.stepSetPassword') || '设置新密码' },
+  { label: proxy?.$t('forgotPassword.stepComplete') || '完成' }
 ];
 
 // 当前步骤
@@ -291,7 +293,7 @@ const canSendSms = computed(() => {
 
 // 计算属性：是否可以验证手机号
 const canVerifyPhone = computed(() => {
-  return phoneForm.phone.length === 11 && phoneForm.smsCode.length === 6;
+  return phoneForm.phone.length === 11;
 });
 
 // 计算属性：是否可以重置密码
@@ -319,10 +321,6 @@ const phoneRules: FormRules = {
       message: proxy?.$t('common.phoneFormatError'),
       trigger: 'blur'
     }
-  ],
-  smsCode: [
-    { required: true, message: proxy?.$t('common.smsCodeRequired'), trigger: 'blur' },
-    { min: 6, max: 6, message: proxy?.$t('common.smsCodeLengthError'), trigger: 'blur' }
   ]
 };
 
@@ -403,9 +401,7 @@ async function handleSendSms() {
 async function handleResendSms() {
   loading.value = true;
   try {
-    // TODO: 调用后端API重新发送短信验证码
-    // await sendSmsCode({ phone: phoneForm.phone });
-
+    await sendSmsCodeApi({ phone: phoneForm.phone, codeType: 'resetPassword' });
     ElMessage.success(proxy?.$t('forgotPassword.smsCodeResent'));
     startCountdown();
   } catch (error: any) {
@@ -439,14 +435,12 @@ async function handleVerifyPhone() {
 
   loading.value = true;
   try {
-    // TODO: 调用后端API验证手机号和验证码
-    // await verifyPhoneCode({ phone: phoneForm.phone, code: phoneForm.smsCode });
-
-    ElMessage.success(proxy?.$t('forgotPassword.verifySuccess'));
+    await sendSmsCodeApi({ phone: phoneForm.phone, codeType: 'resetPassword' });
+    ElMessage.success(proxy?.$t('common.smsCodeSent'));
     currentStep.value = 1;
     startCountdown();
   } catch (error: any) {
-    ElMessage.error(error.message || proxy?.$t('forgotPassword.verifyFailed'));
+    ElMessage.error(error.message || proxy?.$t('common.smsCodeSendFailed'));
   } finally {
     loading.value = false;
   }
@@ -479,17 +473,15 @@ async function handleResetPassword() {
 
   loading.value = true;
   try {
-    // TODO: 调用后端API重置密码
-    // await resetPassword({
-    //   phone: phoneForm.phone,
-    //   code: passwordForm.smsCode,
-    //   newPassword: passwordForm.password
-    // });
-
-    ElMessage.success(proxy?.$t('forgotPassword.resetPasswordSuccess'));
+    await resetPasswordApi({
+      phone: phoneForm.phone,
+      code: passwordForm.smsCode,
+      password: md5(passwordForm.password)
+    });
+    ElMessage.success(proxy?.$t('forgotPassword.resetPasswordSuccess') || '密码重置成功！');
     currentStep.value = 2;
   } catch (error: any) {
-    ElMessage.error(error.message || proxy?.$t('forgotPassword.resetPasswordFailed'));
+    ElMessage.error(error.message || proxy?.$t('forgotPassword.resetPasswordFailed') || '密码重置失败，请重试');
   } finally {
     loading.value = false;
   }

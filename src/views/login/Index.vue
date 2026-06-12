@@ -38,7 +38,17 @@
               v-show="activeTab === index"
               :class="['login-panel']"
             >
+              <AccountLogin
+                v-if="tab.key === 'account'"
+                :form-data="formDataMap[tab.key]"
+                :disabled="isLoggingIn"
+                :refresh-captcha-trigger="refreshCaptchaTrigger"
+                @update:form-data="(data) => handleFormDataUpdate(tab.key, data)"
+                @login="handleLogin"
+                @forgot-password="handleShowForgotPassword"
+              />
               <component
+                v-else
                 :is="tab.component"
                 :form-data="formDataMap[tab.key]"
                 :disabled="isLoggingIn"
@@ -122,6 +132,12 @@ const isLoggingIn = ref(false);
 const isRegistering = ref(false);
 const isForgotPassword = ref(false);
 
+const refreshCaptchaTrigger = ref(0);
+
+function refreshCaptcha() {
+  refreshCaptchaTrigger.value++;
+}
+
 function detectLoginType(identifier: string): string {
   const phoneRegex = /^1[3-9]\d{9}$/;
   const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
@@ -172,6 +188,9 @@ async function handleLogin(data?: any) {
       });
     } catch (error: any) {
       ElMessage.error(error?.message || proxy?.$t('login.loginFailed'));
+      if (data.type !== 'phone') {
+        refreshCaptcha();
+      }
     } finally {
       isLoggingIn.value = false;
     }

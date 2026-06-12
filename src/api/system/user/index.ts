@@ -1,5 +1,6 @@
-import request from "@/utils/request";
-import { AxiosPromise } from "axios";
+// import request from "@/utils/request";
+
+import {client} from '@structure-projects/gateway-client';
 import {
   UserInfo,
   UserDetail,
@@ -13,22 +14,24 @@ import {
 /**
  * 登录成功后获取用户信息（昵称、头像、权限集合和角色集合）
  */
-export function getUserInfoApi(): AxiosPromise<UserInfo> {
-  return request({
+export async function getUserInfoApi(): Promise<{ data: UserInfo }> {
+  const response = await client.request({
     url: "/api/user/profile",
     method: "get"
   });
+  return { data: response.data as UserInfo };
 }
 
-export function getUserDetailApi(): AxiosPromise<UserDetail> {
-  return request({
+export async function getUserDetailApi(): Promise<{ data: UserDetail }> {
+  const response = await client.request({
     url: "/api/users/currentUserDetail",
     method: "get"
   });
+  return { data: response.data as UserDetail };
 }
 
-export function changeCurrent(data: UserDetail) {
-  return request({
+export async function changeCurrent(data: UserDetail): Promise<void> {
+  await client.request({
     url: "/api/users/changeCurrent",
     method: "put",
     data: data
@@ -40,25 +43,27 @@ export function changeCurrent(data: UserDetail) {
  *
  * @param queryParams
  */
-export function getUserPage(
+export async function getUserPage(
   queryParams?: PageQuery<UserQuery>
-): AxiosPromise<UserPageResult> {
-  return request({
+): Promise<{ data: UserPageResult }> {
+  const response = await client.request({
     url: "/api/users/list/" + queryParams?.page + "/" + queryParams?.pageSize,
     method: "get",
     params: queryParams?.params
   });
+  return { data: response.data as UserPageResult };
 }
 /**
  * 获取用户详情
  *
  * @param id
  */
-export function getUserById(id: number): AxiosPromise<UserDetail> {
-  return request({
+export async function getUserById(id: number): Promise<{ data: UserDetail }> {
+  const response = await client.request({
     url: "/api/users/get/" + id,
     method: "get"
   });
+  return { data: response.data as UserDetail };
 }
 
 /**
@@ -66,8 +71,8 @@ export function getUserById(id: number): AxiosPromise<UserDetail> {
  *
  * @param id
  */
-export function enableUser(id: number) {
-  return request({
+export async function enableUser(id: number): Promise<void> {
+  await client.request({
     url: "/api/users/enable/" + id,
     method: "put"
   });
@@ -78,8 +83,8 @@ export function enableUser(id: number) {
  *
  * @param id
  */
-export function disableUser(id: number) {
-  return request({
+export async function disableUser(id: number): Promise<void> {
+  await client.request({
     url: "/api/users/disable/" + id,
     method: "put"
   });
@@ -90,8 +95,8 @@ export function disableUser(id: number) {
  *
  * @param id
  */
-export function lockUser(id: number) {
-  return request({
+export async function lockUser(id: number): Promise<void> {
+  await client.request({
     url: "/api/users/lock/" + id,
     method: "put"
   });
@@ -102,8 +107,8 @@ export function lockUser(id: number) {
  *
  * @param id
  */
-export function unlockUser(id: number) {
-  return request({
+export async function unlockUser(id: number): Promise<void> {
+  await client.request({
     url: "/api/users/unlock/" + id,
     method: "put"
   });
@@ -114,8 +119,8 @@ export function unlockUser(id: number) {
  *
  * @param data
  */
-export function addUser(data: UserForm) {
-  return request({
+export async function addUser(data: UserForm): Promise<void> {
+  await client.request({
     url: "/api/users",
     method: "post",
     data: data
@@ -128,8 +133,8 @@ export function addUser(data: UserForm) {
  * @param id
  * @param data
  */
-export function updateUser(id: number, data: UserForm) {
-  return request({
+export async function updateUser(id: number, data: UserForm): Promise<void> {
+  await client.request({
     url: "/api/users/" + id,
     method: "put",
     data: data
@@ -141,8 +146,8 @@ export function updateUser(id: number, data: UserForm) {
  *
  * @param ids
  */
-export function deleteUser(ids: string) {
-  return request({
+export async function deleteUser(ids: string): Promise<void> {
+  await client.request({
     url: "/api/users/" + ids,
     method: "delete"
   });
@@ -154,8 +159,8 @@ export function deleteUser(ids: string) {
  * @param id
  * @param password
  */
-export function updateUserPassword(id: number, password: string) {
-  return request({
+export async function updateUserPassword(id: number, password: string): Promise<void> {
+  await client.request({
     url: "/api/users/resetPassword",
     method: "put",
     data: {
@@ -171,8 +176,8 @@ export function updateUserPassword(id: number, password: string) {
  * @param roleIds 角色ID集合
  * @param userId 用户ID
  */
-export function assigningRole(roleIds: number[], userId: number) {
-  return request({
+export async function assigningRole(roleIds: number[], userId: number): Promise<void> {
+  await client.request({
     url: "/api/users/assigningRole",
     method: "put",
     data: {

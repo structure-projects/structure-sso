@@ -92,6 +92,8 @@ import { ElMessage } from 'element-plus';
 import { User, Phone, Lock, ChatDotRound } from '@element-plus/icons-vue';
 import type { FormInstance, FormRules } from 'element-plus';
 import AgreementModal from './AgreementModal.vue';
+import { registerApi, getSmsCodeApi } from '@/api/auth';
+import { md5 } from '@/utils/crypto';
 
 const { proxy } = getCurrentInstance() || {};
 
@@ -216,7 +218,7 @@ const handleSendCode = async () => {
 
   sendingCode.value = true;
   try {
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await getSmsCodeApi(registerForm.phone);
     ElMessage.success(proxy?.$t('common.smsCodeSent') || '验证码已发送，请查收');
     codeCountdown.value = 60;
     const timer = setInterval(() => {
@@ -225,8 +227,8 @@ const handleSendCode = async () => {
         clearInterval(timer);
       }
     }, 1000);
-  } catch (error) {
-    ElMessage.error(proxy?.$t('common.smsCodeSendFailed') || '发送验证码失败，请重试');
+  } catch (error: any) {
+    ElMessage.error(error?.message || proxy?.$t('common.smsCodeSendFailed') || '发送验证码失败，请重试');
   } finally {
     sendingCode.value = false;
   }
@@ -239,7 +241,12 @@ const handleRegister = async () => {
     if (valid) {
       registering.value = true;
       try {
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        await registerApi({
+          username: registerForm.username,
+          password: md5(registerForm.password),
+          phone: registerForm.phone,
+          code: registerForm.code
+        });
         ElMessage.success(proxy?.$t('register.registerSuccess') || '注册成功！');
         emit('register-success');
       } catch (error: any) {

@@ -105,6 +105,7 @@ import { getCaptchaApi } from '@/api/auth';
 interface Props {
   formData?: any;
   disabled?: boolean;
+  refreshCaptchaTrigger?: number;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -115,6 +116,10 @@ const emit = defineEmits<{
   (e: 'login', data: any): void;
   (e: 'forgot-password'): void;
 }>();
+
+watch(() => props.refreshCaptchaTrigger, () => {
+  refreshCaptcha();
+});
 
 const { proxy } = getCurrentInstance() || {};
 

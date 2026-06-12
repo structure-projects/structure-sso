@@ -1,9 +1,10 @@
-import request from "@/utils/request";
-import { 
-  LoginData, 
-  LoginResult, 
-  OAuthTokenResponse, 
-  OAuthUserInfoResponse, 
+// import request from "@/utils/request";
+import {client} from '@structure-projects/gateway-client';
+import {
+  LoginData,
+  LoginResult,
+  OAuthTokenResponse,
+  OAuthUserInfoResponse,
   OAuthIntrospectResponse,
   PhoneLoginRequest,
   SendSmsCodeRequest,
@@ -12,33 +13,47 @@ import {
 } from "./types";
 import { getOAuthConfig } from "@/config/oauth";
 
-export function loginApi(data: LoginData): Promise<LoginResult> {
+export interface ResetPasswordRequest {
+  phone: string;
+  code: string;
+  password: string;
+}
+
+export async function resetPasswordApi(data: ResetPasswordRequest): Promise<void> {
+  await client.request({
+    url: "/api/user/resetPassword",
+    method: "put",
+    data: data,
+  });
+}
+
+export async function loginApi(data: LoginData): Promise<LoginResult> {
   console.log('=== loginApi START ===');
   console.log('Data to send:', data);
   console.log('Keys:', Object.keys(data));
   console.log('code:', data.code);
   console.log('key:', data.key);
-  
-  return request({
+  const response = await client.request({
       url: "/api/auth/login",
       method: "post",
       data: data,
-    }) as Promise<LoginResult>;
+    });
+  return response.data as LoginResult;
 }
 
-export function logoutApi(): Promise<void> {
-  return request({
+export async function logoutApi(): Promise<void> {
+  await client.request({
     url: "/api/auth/logout",
     method: "post",
-  }) as Promise<void>;
+  });
 }
 
-export function sendSmsCodeApi(data: SendSmsCodeRequest): Promise<void> {
-  return request({
+export async function sendSmsCodeApi(data: SendSmsCodeRequest): Promise<void> {
+  await client.request({
     url: "/api/phone/send-phone-auth-code",
     method: "post",
     data: data,
-  }) as Promise<void>;
+  });
 }
 
 export interface RegisterRequest {
@@ -53,12 +68,13 @@ export interface RegisterResponse {
   message?: string;
 }
 
-export function registerApi(data: RegisterRequest): Promise<RegisterResponse> {
-  return request({
-    url: "/api/auth/register",
+export async function registerApi(data: RegisterRequest): Promise<RegisterResponse> {
+  const response = await client.request({
+    url: "/api/user/register",
     method: "post",
     data: data,
-  }) as Promise<RegisterResponse>;
+  });
+  return response.data as RegisterResponse;
 }
 
 export function getSmsCodeApi(phone: string): Promise<void> {
@@ -70,11 +86,12 @@ export interface CaptchaResponse {
   image: string;
 }
 
-export function getCaptchaApi(): Promise<CaptchaResponse> {
-  return request({
+export async function getCaptchaApi(): Promise<CaptchaResponse> {
+  const response = await client.request({
     url: "/api/captcha/get",
     method: "get",
-  }) as Promise<CaptchaResponse>;
+  });
+  return response.data as CaptchaResponse;
 }
 
 export interface QRCodeLoginRequest {
@@ -84,42 +101,47 @@ export interface QRCodeLoginRequest {
   qrcodeId: string;
 }
 
-export function qrcodeLoginApi(data: QRCodeLoginRequest): Promise<LoginResult> {
-  return request({
+export async function qrcodeLoginApi(data: QRCodeLoginRequest): Promise<LoginResult> {
+  const response = await client.request({
     url: "/api/auth/qrcode-login",
     method: "post",
     data: data,
-  }) as Promise<LoginResult>;
+  });
+  return response.data as LoginResult;
 }
 
-export function phoneLoginApi(data: PhoneLoginRequest): Promise<LoginResult> {
-  return request({
+export async function phoneLoginApi(data: PhoneLoginRequest): Promise<LoginResult> {
+  const response = await client.request({
     url: "/api/phone/login",
     method: "post",
     data: data,
-  }) as Promise<LoginResult>;
+  });
+  return response.data as LoginResult;
 }
 
-export function getSocialPlatformsApi(): Promise<SocialChannelDTO[]> {
-  return request({
+export async function getSocialPlatformsApi(): Promise<SocialChannelDTO[]> {
+  const response = await client.request({
     url: "/api/social/platforms",
     method: "get",
-  }) as Promise<SocialChannelDTO[]>;
+  });
+  return response.data as SocialChannelDTO[];
 }
 
-export function getEnabledSocialPlatformsApi(appId: string): Promise<SocialChannelDTO[]> {
-  return request({
+export async function getEnabledSocialPlatformsApi(appId: string): Promise<SocialChannelDTO[]> {
+  const response = await client.request({
     url: `/api/social/${appId}/enabled-platforms`,
     method: "get",
   });
+  return response.data as SocialChannelDTO[];
 }
 
-export function socialLoginApi(appId: string, data: SocialLoginRequest): Promise<LoginResult> {
-  return request({
+export async function socialLoginApi(appId: string, data: SocialLoginRequest): Promise<LoginResult> {
+  const response = await client.request({
     url: `/api/social/${appId}/login`,
     method: "post",
     data: data,
-  }) as Promise<LoginResult>;
+  });
+  return response.data as LoginResult;
 }
 
 export async function refreshTokenApi(refreshToken: string): Promise<LoginResult> {
@@ -154,7 +176,7 @@ export async function exchangeCodeForToken(
 
   const authHeader = `Basic ${btoa(`${config.clientId}:${config.clientSecret}`)}`;
 
-  const response = await axios.post<OAuthTokenResponse>(
+  const response = await client.post<OAuthTokenResponse>(
     `${config.baseUrl}${config.tokenEndpoint}`,
     params,
     {
@@ -183,7 +205,7 @@ export async function refreshOAuthToken(
 
   const authHeader = `Basic ${btoa(`${config.clientId}:${config.clientSecret}`)}`;
 
-  const response = await axios.post<OAuthTokenResponse>(
+  const response = await client.post<OAuthTokenResponse>(
     `${config.baseUrl}${config.tokenEndpoint}`,
     params,
     {
@@ -205,7 +227,7 @@ export async function getOAuthUserInfo(
 ): Promise<OAuthUserInfoResponse> {
   const config = getOAuthConfig();
 
-  const response = await axios.get<OAuthUserInfoResponse>(
+  const response = await client.get<OAuthUserInfoResponse>(
     `${config.baseUrl}${config.userInfoEndpoint}`,
     {
       headers: {
@@ -230,7 +252,7 @@ export async function introspectToken(
 
   const authHeader = `Basic ${btoa(`${config.clientId}:${config.clientSecret}`)}`;
 
-  const response = await axios.post<OAuthIntrospectResponse>(
+  const response = await client.post<OAuthIntrospectResponse>(
     `${config.baseUrl}${config.introspectEndpoint}`,
     params,
     {
