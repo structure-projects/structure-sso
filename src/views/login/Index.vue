@@ -54,12 +54,12 @@
       </div>
 
       <div class="ram-link">
-        <a href="http://www.baidu.com" target="_blank" class="register-link-text" @click="handleShowRegister">
-          下载应用
+        <a href="javascript:void(0)" class="register-link-text" @click="handleDownloadApp">
+          {{ $t('login.downloadApp') }}
         </a>
         <span class="link-separator">|</span>
         <a href="javascript:void(0)" class="register-link-text" @click="handleShowRegister">
-          立即注册
+          {{ $t('common.registerNow') }}
         </a>
       </div>
     </div>
@@ -67,7 +67,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, markRaw, computed } from 'vue';
+import { ref, markRaw, computed, getCurrentInstance } from 'vue';
 import { useRoute } from 'vue-router';
 import router from '@/router';
 import { useUserStore, usePermissionStore } from '@/store';
@@ -93,19 +93,21 @@ const permissionStore = usePermissionStore();
 
 const hasSocialPlatforms = ref(false);
 
-const baseTabs = [
-  { key: 'qrcode', label: '扫码登录', icon: markRaw(FullScreen), component: markRaw(QRCodeLogin) },
-  { key: 'account', label: '用户名/邮箱', icon: markRaw(User), component: markRaw(AccountLogin) },
-  { key: 'phone', label: '手机号登录', icon: markRaw(Phone), component: markRaw(PhoneLogin) },
-];
+const { proxy } = getCurrentInstance();
 
-const socialTab = { key: 'social', label: '社交账号', icon: markRaw(Share), component: markRaw(SocialLogin) };
+const baseTabs = computed(() => [
+  { key: 'qrcode', label: proxy?.$t('login.qrcodeLogin'), icon: markRaw(FullScreen), component: markRaw(QRCodeLogin) },
+  { key: 'account', label: proxy?.$t('login.accountLogin'), icon: markRaw(User), component: markRaw(AccountLogin) },
+  { key: 'phone', label: proxy?.$t('login.phoneLogin'), icon: markRaw(Phone), component: markRaw(PhoneLogin) },
+]);
+
+const socialTab = computed(() => ({ key: 'social', label: proxy?.$t('login.socialLogin'), icon: markRaw(Share), component: markRaw(SocialLogin) }));
 
 const tabs = computed(() => {
   if (hasSocialPlatforms.value) {
-    return [...baseTabs, socialTab];
+    return [...baseTabs.value, socialTab.value];
   }
-  return baseTabs;
+  return baseTabs.value;
 });
 
 const activeTab = ref(0);
@@ -169,7 +171,7 @@ async function handleLogin(data?: any) {
         },
       });
     } catch (error: any) {
-      ElMessage.error(error?.message || '登录失败，请重试');
+      ElMessage.error(error?.message || proxy?.$t('login.loginFailed'));
     } finally {
       isLoggingIn.value = false;
     }
@@ -181,6 +183,10 @@ const handleShowRegister = () => {
 
 const handleShowForgotPassword = () => {
   isForgotPassword.value = true;
+};
+
+const handleDownloadApp = () => {
+  router.push('/app-download');
 };
 
 const handleBackToLogin = () => {

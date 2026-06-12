@@ -1,8 +1,8 @@
 <template>
   <div class="login-card">
     <div class="card-header">
-      <h2>账号密码登录</h2>
-      <p>请输入您的账号信息</p>
+      <h2>{{ $t('login.accountPasswordLogin') || '账号密码登录' }}</h2>
+      <p>{{ $t('login.enterAccountInfo') || '请输入您的账号信息' }}</p>
     </div>
     <div class="card-body">
       <AccountLogin @login="handleLogin" :loading="isLoading" />
@@ -12,14 +12,14 @@
       <div class="quick-links">
         <router-link to="/login/phone">手机登录</router-link>
         <span>|</span>
-        <router-link to="/register?login=/login/account">立即注册</router-link>
+        <router-link to="/register?login=/login/account">{{ $t('common.registerNow') }}</router-link>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, getCurrentInstance } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import AccountLogin from './components/AccountLogin.vue';
@@ -31,6 +31,8 @@ const route = useRoute();
 const userStore = useUserStore();
 const isLoading = ref(false);
 const showFooter = ref(true);
+
+const { proxy } = getCurrentInstance()!;
 
 function detectLoginType(identifier: string): string {
   const phoneRegex = /^1[3-9]\d{9}$/;
@@ -47,7 +49,7 @@ function detectLoginType(identifier: string): string {
 
 const handleLogin = async (data: any) => {
   if (!data.username || !data.password) {
-    ElMessage.warning('请填写用户名和密码');
+    ElMessage.warning(proxy?.$t('login.enterUsernamePassword') || '请填写用户名和密码');
     return;
   }
 
@@ -77,7 +79,7 @@ const handleLogin = async (data: any) => {
       },
     });
   } catch (error) {
-    ElMessage.error('登录失败，请重试');
+    ElMessage.error(proxy?.$t('login.loginFailed') || '登录失败，请重试');
   } finally {
     isLoading.value = false;
   }

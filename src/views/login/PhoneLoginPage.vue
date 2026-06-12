@@ -1,8 +1,8 @@
 <template>
   <div class="login-card">
     <div class="card-header">
-      <h2>手机号登录</h2>
-      <p>请输入您的手机号</p>
+      <h2>{{ $t('login.phoneLoginTitle') || '手机号登录' }}</h2>
+      <p>{{ $t('login.enterPhoneNumber') || '请输入您的手机号' }}</p>
     </div>
 
     <div class="card-body">
@@ -20,7 +20,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, getCurrentInstance } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import PhoneLogin from './components/PhoneLogin.vue';

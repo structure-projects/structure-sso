@@ -1,8 +1,8 @@
 <template>
   <div class="login-card">
     <div class="card-header">
-      <h2>扫码登录</h2>
-      <p>请使用应用扫描二维码</p>
+      <h2>{{ $t('login.qrCodeLoginTitle') || '扫码登录' }}</h2>
+      <p>{{ $t('login.scanQRCodeWithApp') || '请使用应用扫描二维码' }}</p>
     </div>
 
     <div class="card-body">
@@ -11,11 +11,11 @@
 
     <div class="card-footer" v-if="showFooter">
       <div class="quick-links">
-        <router-link to="/login/account">账号登录</router-link>
+        <router-link to="/login/account">{{ $t('login.accountLoginTab') || '账号登录' }}</router-link>
         <span>|</span>
-        <router-link to="/login/phone">手机登录</router-link>
+        <router-link to="/login/phone">{{ $t('login.phoneLoginTab') || '手机登录' }}</router-link>
         <span>|</span>
-        <router-link to="/register?login=/login/qrcode">立即注册</router-link>
+        <router-link to="/register?login=/login/qrcode">{{ $t('common.registerNow') }}</router-link>
       </div>
     </div>
   </div>
@@ -34,6 +34,8 @@ const route = useRoute();
 const userStore = useUserStoreHook();
 const isLoading = ref(false);
 const showFooter = ref(true);
+
+const { proxy } = getCurrentInstance() as any;
 
 const handleLogin = async (data: any) => {
   const redirectUrl = (route.query.redirect as string) || '/';
@@ -60,7 +62,7 @@ const handleLogin = async (data: any) => {
       },
     });
   } catch (error) {
-    ElMessage.error('登录失败，请重试');
+    ElMessage.error(proxy?.$t('login.loginFailed') || '登录失败，请重试');
   } finally {
     isLoading.value = false;
   }

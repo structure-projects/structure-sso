@@ -3,7 +3,7 @@ import { useUserStoreHook } from "@/store/modules/user"
 import NProgress from "@/utils/nprogress"
 
 export function setupPermission() {
-  const whiteList = ["/login", "/register", "/", "/login/success", "/login/account", "/login/phone", "/login/qrcode"]
+  const whiteList = ["/login", "/register", "/", "/login/success", "/login/account", "/login/phone", "/login/qrcode", "/login/download", "/app-download"]
 
   router.beforeEach(async (to, from, next) => {
     NProgress.start()

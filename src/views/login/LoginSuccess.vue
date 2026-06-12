@@ -7,13 +7,13 @@
         </el-icon>
       </div>
       
-      <h1 class="success-title">登录成功</h1>
-      <p class="success-desc">欢迎回来！您已成功登录系统</p>
+      <h1 class="success-title">{{ $t('loginSuccess.title') }}</h1>
+      <p class="success-desc">{{ $t('loginSuccess.desc') }}</p>
     </div>
 
     <el-dialog
       v-model="showAuthDialog"
-      title="授权确认"
+      :title="$t('loginSuccess.authConfirm')"
       width="420px"
       :close-on-click-modal="false"
       :close-on-press-escape="false"
@@ -25,18 +25,18 @@
             <InfoFilled />
           </el-icon>
           <div class="info-text">
-            <p class="info-title">应用请求访问权限</p>
-            <p class="info-desc">当前应用请求访问您的账户信息，是否授权？</p>
+            <p class="info-title">{{ $t('loginSuccess.appRequestAccess') }}</p>
+            <p class="info-desc">{{ $t('loginSuccess.appRequestAccessDesc') }}</p>
           </div>
         </div>
         
         <div class="auth-details">
           <div class="detail-item">
-            <span class="detail-label">应用名称：</span>
+            <span class="detail-label">{{ $t('loginSuccess.appName') }}：</span>
             <span class="detail-value">{{ appName }}</span>
           </div>
           <div class="detail-item">
-            <span class="detail-label">目标地址：</span>
+            <span class="detail-label">{{ $t('loginSuccess.targetUrl') }}：</span>
             <span class="detail-value redirect-url" :title="redirectUrl">{{ redirectUrl }}</span>
           </div>
         </div>
@@ -44,8 +44,8 @@
       
       <template #footer>
         <div class="dialog-footer">
-          <el-button @click="handleCancel">取消</el-button>
-          <el-button type="primary" @click="handleAuthorize" :loading="isAuthorizing">确认授权</el-button>
+          <el-button @click="handleCancel">{{ $t('common.cancel') }}</el-button>
+          <el-button type="primary" @click="handleAuthorize" :loading="isAuthorizing">{{ $t('loginSuccess.confirmAuth') }}</el-button>
         </div>
       </template>
     </el-dialog>
@@ -53,7 +53,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, getCurrentInstance } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useUserStore } from '@/store';
 import { CircleCheck, InfoFilled } from '@element-plus/icons-vue';

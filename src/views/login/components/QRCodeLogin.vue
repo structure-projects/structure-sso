@@ -9,19 +9,19 @@
           <el-icon class="is-loading" :size="40">
             <Loading />
           </el-icon>
-          <p>正在生成二维码...</p>
+          <p>{{ $t('login.generatingQRCode') }}</p>
         </div>
         <div v-else-if="isExpired" class="qrcode-expired">
           <el-icon :size="48">
             <WarningFilled />
           </el-icon>
-          <p>二维码已过期</p>
-          <p class="expired-tip">请点击刷新按钮</p>
+          <p>{{ $t('login.qrCodeExpired') }}</p>
+          <p class="expired-tip">{{ $t('login.qrCodeExpiredTip') }}</p>
         </div>
         <img
           v-else
           :src="qrcodeUrl"
-          alt="二维码"
+          alt="QR Code"
           class="qrcode-image"
           @load="handleQRCodeLoad"
         />
@@ -46,9 +46,9 @@
           <span class="status-text">{{ statusText }}</span>
         </div>
         <div class="status-description">
-          <p v-if="scanStatus === 'waiting'">请使用{{ currentAppName }}扫描二维码</p>
-          <p v-else-if="scanStatus === 'scanned'">二维码已扫描，请在手机上确认登录</p>
-          <p v-else-if="scanStatus === 'logging'">正在登录，请稍候...</p>
+          <p v-if="scanStatus === 'waiting'">{{ $t('login.scanQRCode').replace('{appName}', currentAppName) }}</p>
+          <p v-else-if="scanStatus === 'scanned'">{{ $t('login.qrCodeScanned') }}</p>
+          <p v-else-if="scanStatus === 'logging'">{{ $t('login.loggingIn') }}</p>
         </div>
       </div>
     </div>
@@ -56,7 +56,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted, getCurrentInstance } from 'vue';
 import { RefreshRight, Loading, WarningFilled } from '@element-plus/icons-vue';
 import { getOAuthConfig, generateState, generateCodeVerifier, generateCodeChallenge } from '@/config/oauth';
 
@@ -69,6 +69,8 @@ const emit = defineEmits<{
   (e: 'update:form-data', data: any): void;
   (e: 'login', data: any): void;
 }>();
+
+const { proxy } = getCurrentInstance() || {};
 
 const qrcodeUrl = ref('');
 const loading = ref(true);
@@ -84,9 +86,9 @@ const state = ref('');
 
 const statusText = computed(() => {
   const statusMap = {
-    waiting: '等待扫描',
-    scanned: '扫描成功',
-    logging: '登录中',
+    waiting: proxy?.$t('login.scanStatusWaiting'),
+    scanned: proxy?.$t('login.scanStatusScanned'),
+    logging: proxy?.$t('login.scanStatusLogging'),
   };
   return statusMap[scanStatus.value];
 });

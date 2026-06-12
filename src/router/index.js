@@ -12,39 +12,21 @@ const routes = [
         name: "Login",
         component: () => import("@/views/login/Index.vue"),
       },
-    ],
-  },
-  {
-    path: "/login/account",
-    meta: { hidden: true },
-    children: [
       {
-        path: "",
+        path: "account",
         component: () => import("@/views/login/AccountLoginPage.vue"),
       },
-    ],
-  },
-  {
-    path: "/login/phone",
-    meta: { hidden: true },
-    children: [
       {
-        path: "",
+        path: "phone",
         component: () => import("@/views/login/PhoneLoginPage.vue"),
       },
-    ],
-  },
-  {
-    path: "/login/qrcode",
-    meta: { hidden: true },
-    children: [
       {
-        path: "",
+        path: "qrcode",
         component: () => import("@/views/login/QRCodeLoginPage.vue"),
       },
     ],
   },
-    {
+  {
     path: "/register",
     meta: { hidden: true },
     children: [
@@ -58,6 +40,12 @@ const routes = [
     path: "/login/success",
     name: "LoginSuccess",
     component: () => import("@/views/login/LoginSuccess.vue"),
+    meta: { hidden: true },
+  },
+  {
+    path: "/app-download",
+    name: "AppDownload",
+    component: () => import("@/views/login/AppDownload.vue"),
     meta: { hidden: true },
   },
   {

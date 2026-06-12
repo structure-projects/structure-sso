@@ -26,7 +26,7 @@ AgreementModal.vue - 协议弹窗组件
     <template #footer>
       <div class="dialog-footer">
         <el-button type="primary" @click="dialogVisible = false">
-          我已阅读
+          {{ $t('agreement.iHaveRead') }}
         </el-button>
       </div>
     </template>
@@ -34,7 +34,9 @@ AgreementModal.vue - 协议弹窗组件
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue';
+import { ref, computed, watch, onMounted, getCurrentInstance } from 'vue';
+
+const { proxy } = getCurrentInstance() as any;
 
 const props = defineProps<{
   modelValue: boolean;
@@ -52,9 +54,9 @@ const contentRef = ref<HTMLElement>();
 // 协议标题
 const protocolTitle = computed(() => {
   if (props.merged) {
-    return '用户协议与隐私政策';
+    return proxy?.$t('agreement.userAndPrivacyPolicy');
   }
-  return props.type === 'user' ? '用户协议' : '隐私政策';
+  return props.type === 'user' ? proxy?.$t('agreement.userAgreement') : proxy?.$t('agreement.privacyPolicy');
 });
 
 // 用户协议内容

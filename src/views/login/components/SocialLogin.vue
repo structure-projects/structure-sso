@@ -1,7 +1,7 @@
 <template>
   <div class="social-login">
     <div class="social-description">
-      <p>使用以下社交账号快速登录</p>
+      <p>{{ $t('login.socialLoginDesc') }}</p>
     </div>
 
     <!-- 社交平台按钮列表 - 使用动态网格布局 -->
@@ -27,7 +27,7 @@
         class="more-button"
         @click="toggleShowAll"
       >
-        <span class="more-text">更多登录方式</span>
+        <span class="more-text">{{ $t('login.moreLoginMethods') }}</span>
         <span class="more-arrow">↓</span>
       </div>
     </div>
@@ -56,17 +56,17 @@
           class="more-button"
           @click="toggleShowAll"
         >
-          <span class="more-text">收起</span>
+          <span class="more-text">{{ $t('login.collapse') }}</span>
           <span class="more-arrow">↑</span>
         </div>
       </div>
     </div>
 
     <div class="social-tips">
-      <p>登录即表示同意
-        <a href="javascript:void(0)" class="agreement-link" @click.prevent="handleOpenAgreement('user')">《用户协议》</a>
-        和
-        <a href="javascript:void(0)" class="agreement-link" @click.prevent="handleOpenAgreement('privacy')">《隐私政策》</a>
+      <p>{{ $t('login.socialLoginTip') }}
+        <a href="javascript:void(0)" class="agreement-link" @click.prevent="handleOpenAgreement('user')">{{ $t('common.userAgreement') }}</a>
+        {{ $t('common.agreementAnd') }}
+        <a href="javascript:void(0)" class="agreement-link" @click.prevent="handleOpenAgreement('privacy')">{{ $t('common.privacyPolicy') }}</a>
       </p>
     </div>
 
@@ -79,12 +79,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, getCurrentInstance } from 'vue';
 import SocialIcons from './SocialIcons.vue';
 import AgreementModal from './AgreementModal.vue';
 import { getEnabledSocialPlatformsApi, socialLoginApi } from '@/api/auth';
 import type { SocialChannelDTO } from '@/api/auth/types';
 import { getSocialLoginConfig } from '@/config/oauth';
+
+const { proxy } = getCurrentInstance();
 
 interface Props {
   formData?: any;

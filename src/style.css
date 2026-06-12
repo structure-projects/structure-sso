@@ -16,15 +16,20 @@ body {
   background-color: var(--background-color, #f8fafc);
 }
 
-/* 主题配色CSS变量 */
 :root {
-  /* 主色调 */
-  --primary-color: #3b82f6;
-  --secondary-color: #2563eb;
+  --el-color-primary: #13c2c2 !important;
+  --el-color-primary-light-3: #73d1d1 !important;
+  --el-color-primary-light-5: #a8e6e6 !important;
+  --el-color-primary-light-7: #d4f2f2 !important;
+  --el-color-primary-light-8: #e8f7f7 !important;
+  --el-color-primary-light-9: #f2fcfc !important;
+  --el-color-primary-dark-2: #0d9494 !important;
+  
+  --primary-color: #13c2c2;
+  --secondary-color: #0d9494;
   --background-color: #f8fafc;
   --card-color: #ffffff;
   
-  /* 中性色 */
   --text-primary: #1e293b;
   --text-secondary: #64748b;
   --text-light: #94a3b8;
@@ -32,11 +37,8 @@ body {
   --divider-color: #f1f5f9;
   --shadow-color: rgba(0, 0, 0, 0.05);
   
-  /* 功能色 */
   --success-color: #10b981;
   --warning-color: #f59e0b;
   --error-color: #ef4444;
-  --info-color: #3b82f6;
+  --info-color: #13c2c2;
 }
-
-/* 可以通过JavaScript动态更新这些变量 */

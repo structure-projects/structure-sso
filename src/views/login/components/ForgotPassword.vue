@@ -12,14 +12,14 @@ ForgotPassword.vue - 忘记密码页面组件
     <div class="back-button">
       <el-button text @click="handleBack">
         <el-icon><ArrowLeft /></el-icon>
-        返回登录
+        {{ $t('common.backToLogin') }}
       </el-button>
     </div>
 
     <!-- 标题 -->
     <div class="title-section">
-      <h2 class="title">忘记密码</h2>
-      <p class="subtitle">通过手机号验证找回密码</p>
+      <h2 class="title">{{ $t('forgotPassword.title') }}</h2>
+      <p class="subtitle">{{ $t('forgotPassword.subtitle') }}</p>
     </div>
 
     <!-- 步骤指示器 -->
@@ -51,7 +51,7 @@ ForgotPassword.vue - 忘记密码页面组件
         <el-form-item prop="phone">
           <el-input
             v-model="phoneForm.phone"
-            placeholder="请输入注册的手机号"
+            :placeholder="$t('forgotPassword.phone')"
             size="large"
             class="h-[48px]"
             maxlength="11"
@@ -67,7 +67,7 @@ ForgotPassword.vue - 忘记密码页面组件
           <div class="sms-wrapper">
             <el-input
               v-model="phoneForm.smsCode"
-              placeholder="请输入短信验证码"
+              :placeholder="$t('forgotPassword.smsCode')"
               size="large"
               class="sms-input h-[48px]"
               maxlength="6"
@@ -78,7 +78,7 @@ ForgotPassword.vue - 忘记密码页面组件
               class="sms-button"
               @click="handleSendSms"
             >
-              {{ countdown > 0 ? `${countdown}秒后重发` : '获取验证码' }}
+              {{ countdown > 0 ? `${countdown}${$t('forgotPassword.countdownSuffix')}` : $t('common.getSmsCode') }}
             </el-button>
           </div>
         </el-form-item>
@@ -92,7 +92,7 @@ ForgotPassword.vue - 忘记密码页面组件
             :disabled="!canVerifyPhone"
             @click="handleVerifyPhone"
           >
-            下一步
+            {{ $t('forgotPassword.nextStep') }}
           </el-button>
         </el-form-item>
       </el-form>
@@ -101,7 +101,7 @@ ForgotPassword.vue - 忘记密码页面组件
     <!-- 步骤2：设置新密码 -->
     <div v-if="currentStep === 1" class="step-content">
       <div class="phone-display">
-        已向 <span class="phone-number">{{ maskedPhone }}</span> 发送验证码
+        {{ $t('forgotPassword.smsCodeSentTo').replace('{phone}', maskedPhone) }}
       </div>
 
       <el-form
@@ -114,7 +114,7 @@ ForgotPassword.vue - 忘记密码页面组件
           <div class="sms-wrapper">
             <el-input
               v-model="passwordForm.smsCode"
-              placeholder="请输入短信验证码"
+              :placeholder="$t('forgotPassword.smsCode')"
               size="large"
               class="sms-input h-[48px]"
               maxlength="6"
@@ -125,7 +125,7 @@ ForgotPassword.vue - 忘记密码页面组件
               class="sms-button"
               @click="handleResendSms"
             >
-              {{ countdown > 0 ? `${countdown}秒后重发` : '重新获取' }}
+              {{ countdown > 0 ? `${countdown}${$t('forgotPassword.countdownSuffix')}` : $t('forgotPassword.resendSmsCode') }}
             </el-button>
           </div>
         </el-form-item>
@@ -134,7 +134,7 @@ ForgotPassword.vue - 忘记密码页面组件
           <el-input
             v-model="passwordForm.password"
             :type="showPassword ? 'text' : 'password'"
-            placeholder="请输入新密码"
+            :placeholder="$t('forgotPassword.newPassword')"
             size="large"
             class="h-[48px]"
             @input="handlePasswordInput"
@@ -157,7 +157,7 @@ ForgotPassword.vue - 忘记密码页面组件
           <el-input
             v-model="passwordForm.confirmPassword"
             :type="showConfirmPassword ? 'text' : 'password'"
-            placeholder="请再次输入新密码"
+            :placeholder="$t('forgotPassword.confirmNewPassword')"
             size="large"
             class="h-[48px]"
             @input="handleConfirmPasswordInput"
@@ -185,7 +185,7 @@ ForgotPassword.vue - 忘记密码页面组件
             :disabled="!canResetPassword"
             @click="handleResetPassword"
           >
-            重置密码
+            {{ $t('forgotPassword.resetPassword') }}
           </el-button>
         </el-form-item>
       </el-form>
@@ -196,15 +196,15 @@ ForgotPassword.vue - 忘记密码页面组件
       <div class="success-icon">
         <el-icon color="#67c23a" :size="64"><SuccessFilled /></el-icon>
       </div>
-      <h3 class="success-title">密码重置成功</h3>
-      <p class="success-desc">请使用新密码登录您的账号</p>
+      <h3 class="success-title">{{ $t('forgotPassword.resetSuccess') }}</h3>
+      <p class="success-desc">{{ $t('forgotPassword.resetSuccessDesc') }}</p>
       <el-button
         type="primary"
         size="large"
         class="submit-button"
         @click="handleBackToLogin"
       >
-        返回登录
+        {{ $t('forgotPassword.backToLoginButton') }}
       </el-button>
     </div>
   </div>
@@ -212,7 +212,7 @@ ForgotPassword.vue - 忘记密码页面组件
 
 <script setup lang="ts">
 // 导入 Vue 内置 API 和依赖组件
-import { ref, computed, reactive, onUnmounted } from 'vue';
+import { ref, computed, reactive, onUnmounted, getCurrentInstance } from 'vue';
 import {
   ArrowLeft,
   Check,
@@ -225,6 +225,9 @@ import {
 import type { FormInstance, FormRules } from 'element-plus';
 import { ElMessage } from 'element-plus';
 import router from '@/router';
+
+// 获取组件实例以访问 $t
+const { proxy } = getCurrentInstance()!;
 
 // 组件属性定义
 interface Props {
@@ -245,9 +248,9 @@ const emit = defineEmits<{
 
 // 步骤定义
 const steps = [
-  { label: '验证手机号' },
-  { label: '设置新密码' },
-  { label: '完成' }
+  { label: proxy?.$t('forgotPassword.stepVerifyPhone') },
+  { label: proxy?.$t('forgotPassword.stepSetPassword') },
+  { label: proxy?.$t('forgotPassword.stepComplete') }
 ];
 
 // 当前步骤
@@ -310,40 +313,40 @@ const maskedPhone = computed(() => {
 // 手机号表单验证规则
 const phoneRules: FormRules = {
   phone: [
-    { required: true, message: '请输入手机号', trigger: 'blur' },
+    { required: true, message: proxy?.$t('common.phoneRequired'), trigger: 'blur' },
     {
       pattern: /^1[3-9]\d{9}$/,
-      message: '请输入正确的手机号',
+      message: proxy?.$t('common.phoneFormatError'),
       trigger: 'blur'
     }
   ],
   smsCode: [
-    { required: true, message: '请输入短信验证码', trigger: 'blur' },
-    { min: 6, max: 6, message: '短信验证码为6位', trigger: 'blur' }
+    { required: true, message: proxy?.$t('common.smsCodeRequired'), trigger: 'blur' },
+    { min: 6, max: 6, message: proxy?.$t('common.smsCodeLengthError'), trigger: 'blur' }
   ]
 };
 
 // 密码表单验证规则
 const passwordRules: FormRules = {
   smsCode: [
-    { required: true, message: '请输入短信验证码', trigger: 'blur' },
-    { min: 6, max: 6, message: '短信验证码为6位', trigger: 'blur' }
+    { required: true, message: proxy?.$t('common.smsCodeRequired'), trigger: 'blur' },
+    { min: 6, max: 6, message: proxy?.$t('common.smsCodeLengthError'), trigger: 'blur' }
   ],
   password: [
-    { required: true, message: '请输入新密码', trigger: 'blur' },
-    { min: 8, max: 20, message: '密码长度为8-20位', trigger: 'blur' },
+    { required: true, message: proxy?.$t('forgotPassword.newPasswordRequired'), trigger: 'blur' },
+    { min: 8, max: 20, message: proxy?.$t('forgotPassword.newPasswordLengthError'), trigger: 'blur' },
     {
       pattern: /^(?![\d]+$)(?![a-zA-Z]+$)(?![^\da-zA-Z]+$).{8,20}$/,
-      message: '密码必须包含字母、数字和特殊字符中的至少两种',
+      message: proxy?.$t('forgotPassword.newPasswordFormatError'),
       trigger: 'blur'
     }
   ],
   confirmPassword: [
-    { required: true, message: '请再次输入新密码', trigger: 'blur' },
+    { required: true, message: proxy?.$t('forgotPassword.confirmNewPasswordRequired'), trigger: 'blur' },
     {
       validator: (rule, value, callback) => {
         if (value !== passwordForm.password) {
-          callback(new Error('两次输入的密码不一致'));
+          callback(new Error(proxy?.$t('common.passwordMismatch')));
         } else {
           callback();
         }
@@ -387,10 +390,10 @@ async function handleSendSms() {
     // TODO: 调用后端API发送短信验证码
     // await sendSmsCode({ phone: phoneForm.phone });
 
-    ElMessage.success('验证码已发送');
+    ElMessage.success(proxy?.$t('common.smsCodeSent'));
     startCountdown();
   } catch (error: any) {
-    ElMessage.error(error.message || '发送验证码失败');
+    ElMessage.error(error.message || proxy?.$t('common.smsCodeSendFailed'));
   } finally {
     loading.value = false;
   }
@@ -403,10 +406,10 @@ async function handleResendSms() {
     // TODO: 调用后端API重新发送短信验证码
     // await sendSmsCode({ phone: phoneForm.phone });
 
-    ElMessage.success('验证码已重新发送');
+    ElMessage.success(proxy?.$t('forgotPassword.smsCodeResent'));
     startCountdown();
   } catch (error: any) {
-    ElMessage.error(error.message || '发送验证码失败');
+    ElMessage.error(error.message || proxy?.$t('common.smsCodeSendFailed'));
   } finally {
     loading.value = false;
   }
@@ -439,11 +442,11 @@ async function handleVerifyPhone() {
     // TODO: 调用后端API验证手机号和验证码
     // await verifyPhoneCode({ phone: phoneForm.phone, code: phoneForm.smsCode });
 
-    ElMessage.success('验证成功');
+    ElMessage.success(proxy?.$t('forgotPassword.verifySuccess'));
     currentStep.value = 1;
     startCountdown();
   } catch (error: any) {
-    ElMessage.error(error.message || '验证失败，请检查验证码');
+    ElMessage.error(error.message || proxy?.$t('forgotPassword.verifyFailed'));
   } finally {
     loading.value = false;
   }
@@ -483,10 +486,10 @@ async function handleResetPassword() {
     //   newPassword: passwordForm.password
     // });
 
-    ElMessage.success('密码重置成功');
+    ElMessage.success(proxy?.$t('forgotPassword.resetPasswordSuccess'));
     currentStep.value = 2;
   } catch (error: any) {
-    ElMessage.error(error.message || '重置密码失败');
+    ElMessage.error(error.message || proxy?.$t('forgotPassword.resetPasswordFailed'));
   } finally {
     loading.value = false;
   }

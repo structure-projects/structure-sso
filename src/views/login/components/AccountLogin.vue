@@ -10,7 +10,7 @@
       <el-form-item prop="username">
         <el-input
           v-model="formData.username"
-          placeholder="请输入用户名/邮箱/手机号"
+          :placeholder="$t('login.usernamePlaceholder')"
           size="large"
           class="h-[48px]"
           @input="handleUsernameInput"
@@ -26,7 +26,7 @@
         <el-input
           v-model="formData.password"
           :type="showPassword ? 'text' : 'password'"
-          placeholder="请输入密码"
+          :placeholder="$t('login.passwordPlaceholder')"
           size="large"
           class="h-[48px]"
           @input="handlePasswordInput"
@@ -50,7 +50,7 @@
         <div class="captcha-wrapper">
           <el-input
             v-model="formData.captcha"
-            placeholder="请输入验证码"
+            :placeholder="$t('login.captchaPlaceholder')"
             size="large"
             class="captcha-input h-[48px]"
             maxlength="4"
@@ -61,7 +61,7 @@
             <img
               v-if="captchaUrl"
               :src="captchaUrl"
-              alt="验证码"
+              :alt="$t('login.captchaCode')"
               class="captcha-img"
             />
             <div v-else class="captcha-loading">
@@ -73,10 +73,10 @@
 
       <div class="form-options">
         <el-checkbox v-model="formData.remember" @change="handleRememberChange">
-          记住我
+          {{ $t('login.remember') }}
         </el-checkbox>
         <el-link type="primary" underline="never" @click="handleForgotPassword">
-          忘记密码？
+          {{ $t('login.forgotPassword') }}
         </el-link>
       </div>
 
@@ -89,7 +89,7 @@
           :disabled="!canSubmit || internalDisabled"
           @click="handleSubmit"
         >
-          登录
+          {{ $t('login.loginButton') }}
         </el-button>
       </el-form-item>
     </el-form>
@@ -97,7 +97,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, reactive, watch, onMounted } from 'vue';
+import { ref, computed, reactive, watch, onMounted, getCurrentInstance } from 'vue';
 import { User, Lock, View, Hide, Loading } from '@element-plus/icons-vue';
 import type { FormInstance, FormRules } from 'element-plus';
 import { getCaptchaApi } from '@/api/auth';
@@ -115,6 +115,8 @@ const emit = defineEmits<{
   (e: 'login', data: any): void;
   (e: 'forgot-password'): void;
 }>();
+
+const { proxy } = getCurrentInstance() || {};
 
 const accountFormRef = ref<FormInstance>();
 const formData = reactive({
@@ -137,11 +139,11 @@ const internalDisabled = computed(() => props.disabled || loading.value);
 
 const formRules: FormRules = {
   username: [
-    { required: true, message: '请输入用户名/邮箱/手机号', trigger: 'blur' },
+    { required: true, message: proxy?.$t('login.usernameRequired'), trigger: 'blur' },
     {
       validator: (rule, value, callback) => {
         if (inputType.value === 'email' && !isValidEmail(value)) {
-          callback(new Error('邮箱格式不正确'));
+          callback(new Error(proxy?.$t('login.emailFormatError')));
         } else {
           callback();
         }
@@ -150,11 +152,11 @@ const formRules: FormRules = {
     },
   ],
   password: [
-    { required: true, message: '请输入密码', trigger: 'blur' },
+    { required: true, message: proxy?.$t('login.passwordRequired'), trigger: 'blur' },
     {
       validator: (rule, value, callback) => {
         if (value.length < 6) {
-          callback(new Error('密码长度不能少于6位'));
+          callback(new Error(proxy?.$t('login.passwordLengthError')));
         } else {
           callback();
         }
@@ -163,11 +165,11 @@ const formRules: FormRules = {
     },
   ],
   captcha: [
-    { required: true, message: '请输入验证码', trigger: 'blur' },
+    { required: true, message: proxy?.$t('login.captchaRequired'), trigger: 'blur' },
     {
       validator: (rule, value, callback) => {
         if (value.length !== 4) {
-          callback(new Error('验证码必须是4位字符'));
+          callback(new Error(proxy?.$t('login.captchaLengthError')));
         } else {
           callback();
         }
@@ -179,9 +181,9 @@ const formRules: FormRules = {
 
 const inputTypeText = computed(() => {
   const typeMap = {
-    phone: '手机号',
-    email: '邮箱',
-    username: '用户名',
+    phone: proxy?.$t('login.inputTypePhone'),
+    email: proxy?.$t('login.inputTypeEmail'),
+    username: proxy?.$t('login.inputTypeUsername'),
   };
   return typeMap[inputType.value] || '';
 });
@@ -228,7 +230,7 @@ function detectInputType(value: string) {
   } else if (emailRegex.test(value)) {
     inputType.value = 'email';
     if (!isValidEmail(value)) {
-      errors.username = '邮箱格式不正确';
+      errors.username = proxy?.$t('login.emailFormatError');
     } else {
       errors.username = '';
     }

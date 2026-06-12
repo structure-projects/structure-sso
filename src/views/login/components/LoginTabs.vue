@@ -41,7 +41,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, shallowRef, watch, nextTick, markRaw } from 'vue';
+import { ref, computed, shallowRef, watch, nextTick, markRaw, getCurrentInstance } from 'vue';
 import { FullScreen, Phone, User, Share } from '@element-plus/icons-vue';
 import QRCodeLogin from './QRCodeLogin.vue';
 import PhoneLogin from './PhoneLogin.vue';
@@ -67,12 +67,14 @@ const emit = defineEmits<{
   (e: 'login', data: any): void;
 }>();
 
-const tabs: TabItem[] = [
-  { key: 'qrcode', label: '扫码登录', icon: markRaw(FullScreen), component: markRaw(QRCodeLogin) },
-  { key: 'phone', label: '手机号登录', icon: markRaw(Phone), component: markRaw(PhoneLogin) },
-  { key: 'account', label: '用户名/邮箱', icon: markRaw(User), component: markRaw(AccountLogin) },
-  { key: 'social', label: '社交账号', icon: markRaw(Share), component: markRaw(SocialLogin) },
-];
+const { proxy } = getCurrentInstance();
+
+const tabs = computed<TabItem[]>(() => [
+  { key: 'qrcode', label: proxy?.$t('login.qrcodeLogin'), icon: markRaw(FullScreen), component: markRaw(QRCodeLogin) },
+  { key: 'phone', label: proxy?.$t('login.phoneLogin'), icon: markRaw(Phone), component: markRaw(PhoneLogin) },
+  { key: 'account', label: proxy?.$t('login.accountLogin'), icon: markRaw(User), component: markRaw(AccountLogin) },
+  { key: 'social', label: proxy?.$t('login.socialLogin'), icon: markRaw(Share), component: markRaw(SocialLogin) },
+]);
 
 const activeTab = ref(props.defaultTab || 0);
 const panelEnter = ref(false);

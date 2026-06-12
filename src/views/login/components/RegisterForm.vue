@@ -1,48 +1,48 @@
 <template>
   <div class="register-form">
     <div class="form-header">
-      <h2>注册新账户</h2>
-      <p>填写以下信息完成注册</p>
+      <h2>{{ $t('register.title') }}</h2>
+      <p>{{ $t('register.subtitle') }}</p>
     </div>
 
     <el-form ref="registerFormRef" :model="registerForm" :rules="registerRules" class="register-form-content">
       <div class="form-grid">
-        <label class="form-label">用户名</label>
+        <label class="form-label">{{ $t('register.username') }}</label>
         <el-form-item prop="username" class="form-item">
-          <el-input v-model="registerForm.username" placeholder="请输入用户名" size="large" :prefix-icon="User" />
+          <el-input v-model="registerForm.username" :placeholder="$t('register.username')" size="large" :prefix-icon="User" />
         </el-form-item>
       </div>
 
       <div class="form-grid">
-        <label class="form-label">手机号</label>
+        <label class="form-label">{{ $t('register.phone') }}</label>
         <el-form-item prop="phone" class="form-item">
-          <el-input v-model="registerForm.phone" placeholder="请输入手机号" size="large" :prefix-icon="Phone" maxlength="11" />
+          <el-input v-model="registerForm.phone" :placeholder="$t('register.phone')" size="large" :prefix-icon="Phone" maxlength="11" />
         </el-form-item>
       </div>
 
       <div class="form-grid">
-        <label class="form-label">验证码</label>
+        <label class="form-label">{{ $t('register.smsCode') }}</label>
         <el-form-item prop="code" class="form-item">
           <div class="code-input-wrapper">
-            <el-input v-model="registerForm.code" placeholder="请输入验证码" size="large" :prefix-icon="ChatDotRound" maxlength="6" />
+            <el-input v-model="registerForm.code" :placeholder="$t('register.smsCode')" size="large" :prefix-icon="ChatDotRound" maxlength="6" />
             <el-button :disabled="codeCountdown > 0 || !phoneValid" :loading="sendingCode" type="primary" size="large" class="code-button" @click="handleSendCode">
-              {{ codeCountdown > 0 ? `${codeCountdown}s` : '获取验证码' }}
+              {{ codeCountdown > 0 ? `${codeCountdown}s` : $t('common.getSmsCode') }}
             </el-button>
           </div>
         </el-form-item>
       </div>
 
       <div class="form-grid">
-        <label class="form-label">密码</label>
+        <label class="form-label">{{ $t('register.password') }}</label>
         <el-form-item prop="password" class="form-item">
-          <el-input v-model="registerForm.password" type="password" placeholder="请输入密码" size="large" :prefix-icon="Lock" show-password />
+          <el-input v-model="registerForm.password" type="password" :placeholder="$t('register.password')" size="large" :prefix-icon="Lock" show-password />
         </el-form-item>
       </div>
 
       <div class="form-grid">
-        <label class="form-label">确认密码</label>
+        <label class="form-label">{{ $t('register.confirmPassword') }}</label>
         <el-form-item prop="confirmPassword" class="form-item">
-          <el-input v-model="registerForm.confirmPassword" type="password" placeholder="请再次输入密码" size="large" :prefix-icon="Lock" show-password />
+          <el-input v-model="registerForm.confirmPassword" type="password" :placeholder="$t('register.confirmPassword')" size="large" :prefix-icon="Lock" show-password />
         </el-form-item>
       </div>
 
@@ -53,10 +53,10 @@
             v-model="registerForm.agreement"
             @click.prevent="handleAgreementClick"
           >
-            我已阅读并同意
-            <a href="javascript:void(0)" class="agreement-link" @click.stop="handleOpenAgreement('user')">《用户协议》</a>
+            {{ $t('register.agreementPrefix') }}
+            <a href="javascript:void(0)" class="agreement-link" @click.stop="handleOpenAgreement('user')">{{ $t('common.userAgreement') }}</a>
             和
-            <a href="javascript:void(0)" class="agreement-link" @click.stop="handleOpenAgreement('privacy')">《隐私政策》</a>
+            <a href="javascript:void(0)" class="agreement-link" @click.stop="handleOpenAgreement('privacy')">{{ $t('common.privacyPolicy') }}</a>
           </el-checkbox>
         </el-form-item>
       </div>
@@ -65,15 +65,15 @@
         <label class="form-label"></label>
         <el-form-item class="form-item">
           <el-button type="primary" size="large" class="register-button" :loading="registering" :disabled="!canRegister" @click="handleRegister">
-            立即注册
+            {{ $t('register.registerButton') }}
           </el-button>
         </el-form-item>
       </div>
     </el-form>
 
     <div class="back-to-login">
-      已有账户？
-      <a href="javascript:void(0)" @click="handleBack">立即登录</a>
+      {{ $t('register.alreadyHasAccount') }}
+      <a href="javascript:void(0)" @click="handleBack">{{ $t('register.goToLogin') }}</a>
     </div>
 
     <!-- 协议弹窗 -->
@@ -87,11 +87,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed } from 'vue';
+import { ref, reactive, computed, getCurrentInstance } from 'vue';
 import { ElMessage } from 'element-plus';
 import { User, Phone, Lock, ChatDotRound } from '@element-plus/icons-vue';
 import type { FormInstance, FormRules } from 'element-plus';
 import AgreementModal from './AgreementModal.vue';
+
+const { proxy } = getCurrentInstance() || {};
 
 interface Props {
   backRoute?: string;
@@ -122,9 +124,9 @@ const registerForm = reactive({
 
 const validateConfirmPassword = (rule: any, value: any, callback: any) => {
   if (value === '') {
-    callback(new Error('请再次输入密码'));
+    callback(new Error(proxy?.$t('common.passwordRequired') || '请再次输入密码'));
   } else if (value !== registerForm.password) {
-    callback(new Error('两次输入密码不一致'));
+    callback(new Error(proxy?.$t('common.passwordMismatch') || '两次输入密码不一致'));
   } else {
     callback();
   }
@@ -133,9 +135,9 @@ const validateConfirmPassword = (rule: any, value: any, callback: any) => {
 const validatePhone = (rule: any, value: any, callback: any) => {
   const phoneRegex = /^1[3-9]\d{9}$/;
   if (!value) {
-    callback(new Error('请输入手机号'));
+    callback(new Error(proxy?.$t('common.phoneRequired') || '请输入手机号'));
   } else if (!phoneRegex.test(value)) {
-    callback(new Error('手机号格式不正确'));
+    callback(new Error(proxy?.$t('common.phoneFormatError') || '手机号格式不正确'));
   } else {
     phoneValid.value = true;
     callback();
@@ -144,19 +146,19 @@ const validatePhone = (rule: any, value: any, callback: any) => {
 
 const registerRules: FormRules = {
   username: [
-    { required: true, message: '请输入用户名', trigger: 'blur' },
-    { min: 3, max: 20, message: '用户名长度在 3 到 20 个字符', trigger: 'blur' }
+    { required: true, message: proxy?.$t('common.usernameRequired') || '请输入用户名', trigger: 'blur' },
+    { min: 3, max: 20, message: proxy?.$t('register.usernameLengthError') || '用户名长度在 3 到 20 个字符', trigger: 'blur' }
   ],
   phone: [
     { required: true, validator: validatePhone, trigger: 'blur' }
   ],
   code: [
-    { required: true, message: '请输入验证码', trigger: 'blur' },
-    { len: 6, message: '验证码长度为6位', trigger: 'blur' }
+    { required: true, message: proxy?.$t('common.smsCodeRequired') || '请输入验证码', trigger: 'blur' },
+    { len: 6, message: proxy?.$t('common.smsCodeLengthError') || '验证码长度为6位', trigger: 'blur' }
   ],
   password: [
-    { required: true, message: '请输入密码', trigger: 'blur' },
-    { min: 6, max: 20, message: '密码长度在 6 到 20 个字符', trigger: 'blur' }
+    { required: true, message: proxy?.$t('common.passwordRequired') || '请输入密码', trigger: 'blur' },
+    { min: 6, max: 20, message: proxy?.$t('common.passwordLengthError') || '密码长度在 6 到 20 个字符', trigger: 'blur' }
   ],
   confirmPassword: [
     { required: true, validator: validateConfirmPassword, trigger: 'blur' }
@@ -165,7 +167,7 @@ const registerRules: FormRules = {
     {
       validator: (rule, value, callback) => {
         if (!value) {
-          callback(new Error('请阅读并同意用户协议和隐私政策'));
+          callback(new Error(proxy?.$t('register.agreementRequired') || '请阅读并同意用户协议和隐私政策'));
         } else {
           callback();
         }
@@ -215,7 +217,7 @@ const handleSendCode = async () => {
   sendingCode.value = true;
   try {
     await new Promise(resolve => setTimeout(resolve, 1000));
-    ElMessage.success('验证码已发送，请查收');
+    ElMessage.success(proxy?.$t('common.smsCodeSent') || '验证码已发送，请查收');
     codeCountdown.value = 60;
     const timer = setInterval(() => {
       codeCountdown.value--;
@@ -224,7 +226,7 @@ const handleSendCode = async () => {
       }
     }, 1000);
   } catch (error) {
-    ElMessage.error('发送验证码失败，请重试');
+    ElMessage.error(proxy?.$t('common.smsCodeSendFailed') || '发送验证码失败，请重试');
   } finally {
     sendingCode.value = false;
   }
@@ -238,10 +240,10 @@ const handleRegister = async () => {
       registering.value = true;
       try {
         await new Promise(resolve => setTimeout(resolve, 1500));
-        ElMessage.success('注册成功！');
+        ElMessage.success(proxy?.$t('register.registerSuccess') || '注册成功！');
         emit('register-success');
       } catch (error: any) {
-        ElMessage.error(error?.message || '注册失败，请重试');
+        ElMessage.error(error?.message || proxy?.$t('register.registerFailed') || '注册失败，请重试');
       } finally {
         registering.value = false;
       }

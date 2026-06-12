@@ -10,7 +10,7 @@
       <el-form-item prop="phone">
         <el-input
           v-model="formData.phone"
-          placeholder="请输入手机号"
+          :placeholder="$t('login.phonePlaceholder')"
           size="large"
           class="h-[48px]"
           maxlength="11"
@@ -27,7 +27,7 @@
         <div class="code-input-wrapper">
           <el-input
             v-model="formData.code"
-            placeholder="请输入验证码"
+            :placeholder="$t('login.smsCodePlaceholder')"
             size="large"
             class="code-input h-[48px]"
             maxlength="6"
@@ -42,7 +42,7 @@
             class="code-button"
             @click="handleSendCode"
           >
-            {{ countdown > 0 ? `${countdown}s` : '获取验证码' }}
+            {{ countdown > 0 ? `${countdown}s` : $t('common.getSmsCode') }}
           </el-button>
         </div>
       </el-form-item>
@@ -56,7 +56,7 @@
           :disabled="!canSubmit"
           @click="handleSubmit"
         >
-          登录
+          {{ $t('login.phoneLoginButton') }}
         </el-button>
       </el-form-item>
     </el-form>
@@ -64,7 +64,7 @@
     <div v-if="showCaptcha" class="captcha-overlay" @click.self="closeCaptcha">
       <div class="captcha-modal">
         <div class="captcha-header">
-          <h3>安全验证</h3>
+          <h3>{{ $t('login.securityVerification') }}</h3>
           <el-button text @click="closeCaptcha">
             <el-icon><Close /></el-icon>
           </el-button>
@@ -82,7 +82,7 @@
                   <el-icon><DArrowRight /></el-icon>
                 </div>
               </div>
-              <div class="slider-hint">按住滑块，拖动到最右边</div>
+              <div class="slider-hint">{{ $t('login.sliderHint') }}</div>
             </div>
         </div>
       </div>
@@ -92,7 +92,9 @@
 
 <script setup lang="ts">
 import { ref, computed, reactive, watch, onMounted, onUnmounted } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { Close, DArrowRight } from '@element-plus/icons-vue';
+import { ElMessage } from 'element-plus';
 import type { FormInstance, FormRules } from 'element-plus';
 import { sendSmsCodeApi } from '@/api/auth';
 import type { VerificationCodeType } from '@/api/auth/types';
@@ -106,6 +108,8 @@ const emit = defineEmits<{
   (e: 'update:form-data', data: any): void;
   (e: 'login', data: any): void;
 }>();
+
+const { t } = useI18n();
 
 const phoneFormRef = ref<FormInstance>();
 const formData = reactive({
@@ -139,14 +143,14 @@ onUnmounted(() => {
   document.removeEventListener('touchend', handleSliderEnd);
 });
 
-const formRules: FormRules = {
+const formRules = computed<FormRules>(() => ({
   phone: [
-    { required: true, message: '请输入手机号', trigger: 'blur' },
+    { required: true, message: t('common.phoneRequired'), trigger: 'blur' },
     {
       validator: (rule, value, callback) => {
         const phoneRegex = /^1[3-9]\d{9}$/;
         if (!phoneRegex.test(value)) {
-          callback(new Error('手机号格式不正确'));
+          callback(new Error(t('common.phoneFormatError')));
         } else {
           callback();
         }
@@ -155,12 +159,12 @@ const formRules: FormRules = {
     },
   ],
   code: [
-    { required: true, message: '请输入验证码', trigger: 'blur' },
+    { required: true, message: t('common.smsCodeRequired'), trigger: 'blur' },
     {
       validator: (rule, value, callback) => {
         const codeRegex = /^\d{6}$/;
         if (!codeRegex.test(value)) {
-          callback(new Error('验证码必须是6位数字'));
+          callback(new Error(t('common.smsCodeLengthError')));
         } else {
           callback();
         }
@@ -168,7 +172,7 @@ const formRules: FormRules = {
       trigger: 'blur',
     },
   ],
-};
+}));
 
 const canSubmit = computed(() => {
   const phoneRegex = /^1[3-9]\d{9}$/;
@@ -207,7 +211,7 @@ function validateField(field: string) {
 
 function handleSendCode() {
   if (!phoneValid.value) {
-    errors.phone = '请输入正确的手机号';
+    errors.phone = t('common.phoneFormatError');
     return;
   }
 
@@ -282,16 +286,17 @@ function startCountdown() {
   } finally {
     sendingCode.value = false;
   }
+  ElMessage.success(t('common.smsCodeSent'));
 }
 
 async function handleSubmit() {
   if (!canSubmit.value) {
     if (!phoneValid.value) {
-      errors.phone = '请输入正确的手机号';
+      errors.phone = t('common.phoneFormatError');
       phoneFormRef.value?.validateField('phone');
     }
     if (formData.code.length !== 6) {
-      errors.code = '请输入6位验证码';
+      errors.code = t('common.smsCodeLengthError');
       phoneFormRef.value?.validateField('code');
     }
     return;

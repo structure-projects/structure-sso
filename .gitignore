@@ -3,7 +3,9 @@ target/
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**
 !**/src/test/**
-
+.git/
+.mvn/
+node_modules
 ### STS ###
 .apt_generated
 .classpath
@@ -13,9 +15,10 @@ target/
 .springBeans
 .sts4-cache
 logs
+
 ### IntelliJ IDEA ###
 .idea
-.mvn
+#.mvn
 *.iws
 *.iml
 *.ipr
@@ -26,7 +29,7 @@ logs
 /dist/
 /nbdist/
 /.nb-gradle/
-build/
 
 ### VS Code ###
 .vscode/
+structure-ribbon-starter/src/test/

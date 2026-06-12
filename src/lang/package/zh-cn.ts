@@ -1,23 +1,248 @@
 export default {
   // 路由国际化
   route: {
-    dashboard: "首页",
-    document: "项目文档",
+    dashboard: '首页',
+    document: '项目文档',
+  },
+  // 通用国际化
+  common: {
+    confirm: '确认',
+    cancel: '取消',
+    save: '保存',
+    submit: '提交',
+    reset: '重置',
+    delete: '删除',
+    edit: '编辑',
+    add: '添加',
+    search: '搜索',
+    refresh: '刷新',
+    loading: '加载中...',
+    noData: '暂无数据',
+    success: '操作成功',
+    error: '操作失败',
+    warning: '警告',
+    info: '提示',
+    yes: '是',
+    no: '否',
+    ok: '确定',
+    close: '关闭',
+    // 通用验证消息
+    phoneRequired: '请输入手机号',
+    phoneFormatError: '手机号格式不正确',
+    smsCodeRequired: '请输入验证码',
+    smsCodeLengthError: '验证码必须是6位数字',
+    smsCodeSent: '验证码已发送',
+    smsCodeSendFailed: '发送验证码失败，请重试',
+    passwordRequired: '请输入密码',
+    passwordLengthError: '密码长度不能少于6位',
+    passwordMismatch: '两次输入密码不一致',
+    usernameRequired: '请输入用户名',
+    // 通用操作
+    getSmsCode: '获取验证码',
+    registerNow: '立即注册',
+    backToLogin: '返回登录',
+    nextStep: '下一步',
+    // 用户协议
+    userAgreement: '《用户协议》',
+    privacyPolicy: '《隐私政策》',
+    agreementAnd: '和',
   },
   // 登录页面国际化
   login: {
-    username: "用户名",
-    password: "密码",
-    login: "登 录",
-    captchaCode: "验证码",
-    remember: "记住我",
-    forgotPassword: "忘记密码",
+    username: '用户名',
+    password: '密码',
+    login: '登 录',
+    captchaCode: '验证码',
+    remember: '记住我',
+    forgotPassword: '忘记密码',
+    // 标签页
+    qrcodeLogin: '扫码登录',
+    accountLogin: '用户名/邮箱',
+    phoneLogin: '手机号登录',
+    socialLogin: '社交账号',
+    // 账户登录
+    usernamePlaceholder: '请输入用户名/邮箱/手机号',
+    passwordPlaceholder: '请输入密码',
+    captchaPlaceholder: '请输入验证码',
+    loginButton: '登录',
+    // 验证消息
+    usernameRequired: '请输入用户名/邮箱/手机号',
+    emailFormatError: '邮箱格式不正确',
+    passwordRequired: '请输入密码',
+    captchaRequired: '请输入验证码',
+    captchaLengthError: '验证码必须是4位字符',
+    // 输入类型提示
+    inputTypePhone: '手机号',
+    inputTypeEmail: '邮箱',
+    inputTypeUsername: '用户名',
+    // 独立登录页面
+    accountPasswordLogin: '账号密码登录',
+    enterAccountInfo: '请输入您的账号信息',
+    enterUsernamePassword: '请填写用户名和密码',
+    phoneLoginTitle: '手机号登录',
+    enterPhoneNumber: '请输入您的手机号',
+    enterPhoneSmsCode: '请填写手机号和验证码',
+    qrCodeLoginTitle: '扫码登录',
+    scanQRCodeWithApp: '请使用应用扫描二维码',
+    accountLoginTab: '账号登录',
+    phoneLoginTab: '手机登录',
+    // 手机登录
+    phonePlaceholder: '请输入手机号',
+    smsCodePlaceholder: '请输入验证码',
+    getSmsCode: '获取验证码',
+    phoneLoginButton: '登录',
+    // 安全验证弹窗
+    securityVerification: '安全验证',
+    sliderHint: '按住滑块，拖动到最右边',
+    // 二维码登录
+    generatingQRCode: '正在生成二维码...',
+    qrCodeExpired: '二维码已过期',
+    qrCodeExpiredTip: '请点击刷新按钮',
+    scanQRCode: '请使用{appName}扫描二维码',
+    qrCodeScanned: '二维码已扫描，请在手机上确认登录',
+    loggingIn: '正在登录，请稍候...',
+    scanStatusWaiting: '等待扫描',
+    scanStatusScanned: '扫描成功',
+    scanStatusLogging: '登录中',
+    appName: '应用',
+    // 社交登录
+    socialLoginDesc: '使用以下社交账号快速登录',
+    moreLoginMethods: '更多登录方式',
+    collapse: '收起',
+    socialLoginTip: '登录即表示同意',
+    // 链接
+    downloadApp: '下载应用',
+    backToMainLogin: '返回主账号登录',
+    // 错误消息
+    loginFailed: '登录失败，请重试',
+    loginSuccess: '登录成功',
+    welcomeBack: '欢迎回来！您已成功登录系统',
+  },
+  // 注册页面国际化
+  register: {
+    title: '注册新账户',
+    subtitle: '填写以下信息完成注册',
+    username: '用户名',
+    phone: '手机号',
+    smsCode: '验证码',
+    password: '密码',
+    confirmPassword: '确认密码',
+    registerButton: '立即注册',
+    agreementPrefix: '我已阅读并同意',
+    alreadyHasAccount: '已有账户？',
+    goToLogin: '立即登录',
+    // 验证消息
+    usernameLengthError: '用户名长度在 3 到 20 个字符',
+    passwordLengthError: '密码长度在 6 到 20 个字符',
+    confirmPasswordRequired: '请再次输入密码',
+    agreementRequired: '请阅读并同意用户协议和隐私政策',
+    // 成功消息
+    registerSuccess: '注册成功！',
+    registerFailed: '注册失败，请重试',
+  },
+  // 忘记密码页面国际化
+  forgotPassword: {
+    title: '忘记密码',
+    subtitle: '通过手机号验证找回密码',
+    phone: '注册的手机号',
+    smsCode: '短信验证码',
+    newPassword: '新密码',
+    confirmNewPassword: '确认新密码',
+    resendSmsCode: '重新获取',
+    resetPassword: '重置密码',
+    // 步骤
+    stepVerifyPhone: '验证手机号',
+    stepSetPassword: '设置新密码',
+    stepComplete: '完成',
+    // 成功页面
+    resetSuccess: '密码重置成功',
+    resetSuccessDesc: '请使用新密码登录您的账号',
+    // 验证消息
+    newPasswordRequired: '请输入新密码',
+    newPasswordLengthError: '密码长度为8-20位',
+    newPasswordFormatError: '密码必须包含字母、数字和特殊字符中的至少两种',
+    confirmNewPasswordRequired: '请再次输入新密码',
+    // 倒计时
+    resendAfter: '{count}秒后重发',
+    countdownSuffix: '秒后重发',
+    // 消息
+    smsCodeResent: '验证码已重新发送',
+    verifySuccess: '验证成功',
+    verifyFailed: '验证失败，请检查验证码',
+    resetPasswordSuccess: '密码重置成功',
+    resetPasswordFailed: '重置密码失败',
+    // 手机号显示
+    smsCodeSentTo: '已向 {phone} 发送验证码',
+  },
+  // 协议弹窗国际化
+  agreement: {
+    userAgreement: '用户协议',
+    privacyPolicy: '隐私政策',
+    userAndPrivacyPolicy: '用户协议与隐私政策',
+    iHaveRead: '我已阅读',
+    // 用户协议内容标题
+    userServiceAgreement: '用户服务协议',
+    agreementUpdateDate: '用户协议更新日期：',
+    versionNumber: '版本号：',
+    // 隐私政策内容标题
+    privacyNotice: '隐私政策',
+    privacyUpdateDate: '隐私政策更新日期：',
+  },
+  // 登录成功页面国际化
+  loginSuccess: {
+    title: '登录成功',
+    desc: '欢迎回来！您已成功登录系统',
+    // 授权确认弹窗
+    authConfirm: '授权确认',
+    appRequestAccess: '应用请求访问权限',
+    appRequestAccessDesc: '当前应用请求访问您的账户信息，是否授权？',
+    appName: '应用名称：',
+    targetUrl: '目标地址：',
+    confirmAuth: '确认授权',
   },
   // 导航栏国际化
   navbar: {
-    dashboard: "首页",
-    logout: "注销",
-    document: "项目文档",
-    gitee: "码云",
+    dashboard: '首页',
+    logout: '注销',
+    document: '项目文档',
+    gitee: '码云',
+  },
+  // 布局国际化
+  layout: {
+    logoAlt: 'Logo',
+    appTitle: '云极搭',
+    companyName: '云商智慧',
+    copyright: 'Copyright © {year} yueyan.tech All Rights Reserved. {company} 版权所有',
+    icpNumber: '辽ICP备20006496号-1',
+  },
+  // 语言选择器国际化
+  langSelect: {
+    chinese: '中文',
+    english: 'English',
+    switchSuccess: '切换语言成功',
+  },
+  // 下载页面国际化
+  download: {
+    title: '下载应用',
+    subtitle: '扫描下方二维码下载应用',
+    qrCodePlaceholder: '二维码',
+    scanTip: '使用手机扫码即可下载安装应用',
+    directDownload: '直接下载',
+    backToLogin: '返回登录',
+  },
+  // APP 下载页面国际化
+  appDownload: {
+    appName: '云极搭',
+    appDesc: '企业级一站式开发平台，让开发更简单',
+    downloadIOS: '下载 iOS 版本',
+    downloadAndroid: '下载 Android 版本',
+    version: '版本',
+    updateDate: '更新日期',
+    featuresTitle: '功能特性',
+    feature1: '支持多种登录方式，包括账号密码、手机验证码、企业扫码等',
+    feature2: '提供完善的用户权限管理，支持 RAM 子账号体系',
+    feature3: '安全可靠的企业级身份认证服务',
+    qrHint: '使用微信或浏览器扫码下载',
+    viewQRCode: '返回登录',
   },
 };

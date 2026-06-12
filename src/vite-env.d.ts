@@ -5,3 +5,11 @@ declare module '*.vue' {
   const component: DefineComponent<{}, {}, any>
   export default component
 }
+
+declare module '@/settings' {
+  const defaultSettings: {
+    title: string;
+    version: string;
+  };
+  export default defaultSettings;
+}
