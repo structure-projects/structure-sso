@@ -245,4 +245,15 @@ export default {
     qrHint: '使用微信或浏览器扫码下载',
     viewQRCode: '返回登录',
   },
+  // OAuth2 国际化
+  oauth2: {
+    processing: '正在处理授权...',
+    error: '授权失败',
+    authorized: '授权成功',
+    redirecting: '正在跳转...',
+    requestAccess: '请求访问您的账户',
+    permissions: '请求的权限',
+    allow: '允许',
+    deny: '拒绝',
+  },
 };

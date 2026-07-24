@@ -49,6 +49,18 @@ const routes = [
     meta: { hidden: true },
   },
   {
+    path: "/oauth2/callback",
+    name: "OAuth2Callback",
+    component: () => import("@/views/login/OAuth2Callback.vue"),
+    meta: { hidden: true },
+  },
+  {
+    path: "/oauth2/authorize",
+    name: "OAuth2Authorize",
+    component: () => import("@/views/login/OAuth2Authorize.vue"),
+    meta: { hidden: true },
+  },
+  {
     path: "/",
     redirect: "/login",
   },

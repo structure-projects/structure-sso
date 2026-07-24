@@ -23,10 +23,10 @@ export default defineConfig(({ mode }) => {
       }
     },
     server: {
-      port: Number(env.VITE_APP_PORT) || 3000,
+      port: Number(env.VITE_APP_PORT) || 17103,
       proxy: {
         [env.VITE_APP_BASE_API || '/web-api']: {
-          target: 'http://localhost:9000/',
+          target: 'http://localhost:18103/',
           changeOrigin: true,
           rewrite: (path) => path.replace(new RegExp(`^${env.VITE_APP_BASE_API || '/web-api'}`), '')
         }

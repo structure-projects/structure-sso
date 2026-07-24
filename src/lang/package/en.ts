@@ -245,4 +245,15 @@ export default {
     qrHint: 'Scan with WeChat or browser to download',
     viewQRCode: 'Back to Login',
   },
+  // OAuth2 internationalization
+  oauth2: {
+    processing: 'Processing authorization...',
+    error: 'Authorization Failed',
+    authorized: 'Authorization Successful',
+    redirecting: 'Redirecting...',
+    requestAccess: 'Requests access to your account',
+    permissions: 'Requested Permissions',
+    allow: 'Allow',
+    deny: 'Deny',
+  },
 };

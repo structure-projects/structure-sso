@@ -1,35 +1,25 @@
-HELP.md
-target/
-!.mvn/wrapper/maven-wrapper.jar
-!**/src/main/**
-!**/src/test/**
-.git/
-.mvn/
 node_modules
-### STS ###
-.apt_generated
-.classpath
-.factorypath
-.project
-.settings
-.springBeans
-.sts4-cache
-logs
+dist
+dist-ssr
+*.local
 
-### IntelliJ IDEA ###
+# lock
+yarn.lock
+package-lock.json
+pnpm-lock.yaml
+
+# logs
+*.log
+npm-debug.log*
+
+# editor
+.vscode
 .idea
-#.mvn
-*.iws
-*.iml
-*.ipr
+.DS_Store
+*.suo
+*.sw?
 
-### NetBeans ###
-/nbproject/private/
-/nbbuild/
-/dist/
-/nbdist/
-/.nb-gradle/
-
-### VS Code ###
-.vscode/
-structure-ribbon-starter/src/test/
+# env
+.env
+.env.local
+.env.*.local
