@@ -91,9 +91,10 @@ service.interceptors.response.use(
   },
   async (error: any) => {
     if (error.response && error.response.data) {
+      const status = error.response.status;
       const { code, message } = error.response.data;
 
-      if (code === "INVALID_AUTHENTICATION" || code === "NOT_LOGGED_IN") {
+      if (status === 401 || code === "INVALID_AUTHENTICATION" || code === "NOT_LOGGED_IN") {
         await handleTokenExpired();
         return Promise.reject(error);
       }

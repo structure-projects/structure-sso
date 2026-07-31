@@ -1,736 +1,770 @@
-<!--
-ForgotPassword.vue - 忘记密码页面组件
-功能说明：
-- 通过手机号验证找回密码
-- 支持发送验证码、验证验证码、设置新密码
-- 支持返回登录页面
-- 响应式设计，适配不同屏幕尺寸
--->
 <template>
   <div class="forgot-password">
-    <!-- 返回登录按钮 -->
-    <div class="back-button">
-      <el-button text @click="handleBack">
+    <!-- 标题 -->
+    <div class="fp-header">
+      <h2 class="fp-title">{{ $t('forgotPassword.title') }}</h2>
+      <p class="fp-subtitle">{{ $t('forgotPassword.subtitle') }}</p>
+    </div>
+
+    <!-- 步骤条 -->
+    <el-steps :active="currentStep" align-center class="fp-steps" finish-status="success">
+      <el-step :title="$t('forgotPassword.stepInputAccount')" />
+      <el-step :title="$t('forgotPassword.stepVerifyIdentity')" />
+      <el-step :title="$t('forgotPassword.stepSetPassword')" />
+      <el-step :title="$t('forgotPassword.stepComplete')" />
+    </el-steps>
+
+    <!-- 步骤内容区域 -->
+    <div class="fp-content">
+      <!-- ===== 第一步：输入账号 ===== -->
+      <div v-if="currentStep === 0" class="step-panel">
+        <el-form
+          ref="accountFormRef"
+          :model="accountForm"
+          :rules="accountRules"
+          label-position="top"
+          @keyup.enter="handleFindAccount"
+        >
+          <el-form-item prop="identifier">
+            <el-input
+              v-model="accountForm.identifier"
+              :placeholder="$t('forgotPassword.accountPlaceholder')"
+              size="large"
+              clearable
+            />
+          </el-form-item>
+        </el-form>
+        <el-button
+          type="primary"
+          size="large"
+          class="fp-full-btn"
+          :loading="findingAccount"
+          @click="handleFindAccount"
+        >
+          {{ $t('forgotPassword.findAccount') }}
+        </el-button>
+      </div>
+
+      <!-- ===== 第二步：身份验证 ===== -->
+      <div v-if="currentStep === 1" class="step-panel">
+        <!-- 验证方式选择 -->
+        <div v-if="!verifyMethod" class="verify-methods">
+          <p class="verify-method-title">{{ $t('forgotPassword.verifyMethodTitle') }}</p>
+
+          <!-- 密保问题验证 -->
+          <div
+            class="verify-method-card"
+            :class="{ disabled: !hasSecurityQuestions }"
+            @click="selectVerifyMethod('security')"
+          >
+            <div class="method-icon">
+              <el-icon><QuestionFilled /></el-icon>
+            </div>
+            <div class="method-info">
+              <div class="method-name">{{ $t('forgotPassword.verifyBySecurityQuestion') }}</div>
+              <div class="method-desc">{{ $t('forgotPassword.securityQuestionDesc') }}</div>
+            </div>
+            <el-icon class="method-arrow"><ArrowRight /></el-icon>
+          </div>
+
+          <!-- 手机验证码验证 -->
+          <div
+            class="verify-method-card"
+            @click="selectVerifyMethod('phone')"
+          >
+            <div class="method-icon">
+              <el-icon><PhoneFilled /></el-icon>
+            </div>
+            <div class="method-info">
+              <div class="method-name">{{ $t('forgotPassword.verifyByPhone') }}</div>
+              <div class="method-desc">{{ $t('forgotPassword.phoneVerifyDesc') }}</div>
+            </div>
+            <el-icon class="method-arrow"><ArrowRight /></el-icon>
+          </div>
+        </div>
+
+        <!-- 密保问题表单 -->
+        <div v-if="verifyMethod === 'security'" class="verify-form">
+          <div class="verify-form-header">
+            <el-button
+              type="default"
+              text
+              @click="verifyMethod = null"
+            >
+              <el-icon><ArrowLeft /></el-icon>
+              {{ $t('forgotPassword.verifyBySecurityQuestion') }}
+            </el-button>
+          </div>
+          <el-form
+            ref="securityFormRef"
+            :model="securityForm"
+            label-position="top"
+          >
+            <el-form-item
+              v-for="(q, idx) in securityQuestions"
+              :key="q.questionId"
+              :label="`${idx + 1}. ${q.question}`"
+              :prop="'answers.' + idx + '.answer'"
+              :rules="securityAnswerRules"
+            >
+              <el-input
+                v-model="securityForm.answers[idx].answer"
+                :placeholder="$t('forgotPassword.answerPlaceholder')"
+                size="large"
+              />
+            </el-form-item>
+          </el-form>
+          <el-button
+            type="primary"
+            size="large"
+            class="fp-full-btn"
+            :loading="verifyingSecurity"
+            @click="handleVerifySecurityAnswer"
+          >
+            {{ $t('forgotPassword.submitAnswers') }}
+          </el-button>
+        </div>
+
+        <!-- 手机验证码表单 -->
+        <div v-if="verifyMethod === 'phone'" class="verify-form">
+          <div class="verify-form-header">
+            <el-button
+              type="default"
+              text
+              @click="verifyMethod = null"
+            >
+              <el-icon><ArrowLeft /></el-icon>
+              {{ $t('forgotPassword.verifyByPhone') }}
+            </el-button>
+          </div>
+          <el-form
+            ref="phoneFormRef"
+            :model="phoneForm"
+            :rules="phoneRules"
+            label-position="top"
+          >
+            <el-form-item prop="phone">
+              <el-input
+                v-model="phoneForm.phone"
+                :placeholder="$t('forgotPassword.phonePlaceholder')"
+                size="large"
+              />
+            </el-form-item>
+            <el-form-item prop="code">
+              <div class="sms-row">
+                <el-input
+                  v-model="phoneForm.code"
+                  :placeholder="$t('forgotPassword.smsCodePlaceholder')"
+                  size="large"
+                  class="sms-input"
+                />
+                <el-button
+                  size="large"
+                  :disabled="smsCountdown > 0"
+                  :loading="sendingSms"
+                  @click="handleSendPhoneCode"
+                >
+                  <template v-if="smsCountdown > 0">
+                    {{ $t('forgotPassword.resendAfter', { count: smsCountdown }) }}
+                  </template>
+                  <template v-else>
+                    {{ $t('forgotPassword.sendSmsCode') }}
+                  </template>
+                </el-button>
+              </div>
+            </el-form-item>
+          </el-form>
+          <el-button
+            type="primary"
+            size="large"
+            class="fp-full-btn"
+            :loading="verifyingPhone"
+            @click="handleVerifyPhoneCode"
+          >
+            {{ $t('forgotPassword.verifyPhoneCode') }}
+          </el-button>
+        </div>
+      </div>
+
+      <!-- ===== 第三步：设置新密码 ===== -->
+      <div v-if="currentStep === 2" class="step-panel">
+        <el-form
+          ref="passwordFormRef"
+          :model="passwordForm"
+          :rules="passwordRules"
+          label-position="top"
+          @keyup.enter="handleResetPassword"
+        >
+          <el-form-item prop="newPassword">
+            <el-input
+              v-model="passwordForm.newPassword"
+              type="password"
+              :placeholder="$t('forgotPassword.newPassword')"
+              size="large"
+              show-password
+            />
+          </el-form-item>
+          <el-form-item prop="confirmPassword">
+            <el-input
+              v-model="passwordForm.confirmPassword"
+              type="password"
+              :placeholder="$t('forgotPassword.confirmNewPassword')"
+              size="large"
+              show-password
+            />
+          </el-form-item>
+        </el-form>
+        <div class="password-hint">
+          <el-icon><InfoFilled /></el-icon>
+          <span>{{ $t('forgotPassword.passwordRuleHint') }}</span>
+        </div>
+        <el-button
+          type="primary"
+          size="large"
+          class="fp-full-btn"
+          :loading="resettingPassword"
+          @click="handleResetPassword"
+        >
+          {{ $t('forgotPassword.resetPassword') }}
+        </el-button>
+      </div>
+
+      <!-- ===== 第四步：完成 ===== -->
+      <div v-if="currentStep === 3" class="step-panel success-panel">
+        <div class="success-icon">
+          <el-icon><CircleCheckFilled /></el-icon>
+        </div>
+        <h3 class="success-title">{{ $t('forgotPassword.resetSuccess') }}</h3>
+        <p class="success-desc">{{ $t('forgotPassword.resetSuccessDesc') }}</p>
+        <el-button
+          type="primary"
+          size="large"
+          class="fp-full-btn"
+          @click="handleGoToLogin"
+        >
+          {{ $t('forgotPassword.goToLogin') }}
+        </el-button>
+      </div>
+    </div>
+
+    <!-- 底部：返回登录 -->
+    <div v-if="currentStep < 3" class="fp-footer">
+      <el-button
+        v-if="currentStep > 0"
+        type="default"
+        text
+        @click="handlePrevStep"
+      >
         <el-icon><ArrowLeft /></el-icon>
         {{ $t('common.backToLogin') }}
       </el-button>
-    </div>
-
-    <!-- 标题 -->
-    <div class="title-section">
-      <h2 class="title">{{ $t('forgotPassword.title') }}</h2>
-      <p class="subtitle">{{ $t('forgotPassword.subtitle') }}</p>
-    </div>
-
-    <!-- 步骤指示器 -->
-    <div class="steps-indicator">
-      <div
-        v-for="(step, index) in steps"
-        :key="index"
-        :class="['step', {
-          'active': currentStep === index,
-          'completed': currentStep > index
-        }]"
-      >
-        <div class="step-number">
-          <el-icon v-if="currentStep > index"><Check /></el-icon>
-          <span v-else>{{ index + 1 }}</span>
-        </div>
-        <div class="step-label">{{ step.label }}</div>
-      </div>
-    </div>
-
-    <!-- 步骤1：验证手机号 -->
-    <div v-if="currentStep === 0" class="step-content">
-      <el-form
-        ref="phoneFormRef"
-        :model="phoneForm"
-        :rules="phoneRules"
-        class="forgot-form"
-      >
-        <el-form-item prop="phone">
-          <el-input
-            v-model="phoneForm.phone"
-            :placeholder="$t('forgotPassword.phone')"
-            size="large"
-            class="h-[48px]"
-            maxlength="11"
-            @input="handlePhoneInput"
-          >
-            <template #prefix>
-              <el-icon><Iphone /></el-icon>
-            </template>
-          </el-input>
-        </el-form-item>
-
-        <!-- <el-form-item prop="smsCode">
-          <div class="sms-wrapper">
-            <el-input
-              v-model="phoneForm.smsCode"
-              :placeholder="$t('forgotPassword.smsCode')"
-              size="large"
-              class="sms-input h-[48px]"
-              maxlength="6"
-              @input="handleSmsCodeInput"
-            />
-            <el-button
-              :disabled="countdown > 0 || !canSendSms"
-              class="sms-button"
-              @click="handleSendSms"
-            >
-              {{ countdown > 0 ? `${countdown}${$t('forgotPassword.countdownSuffix')}` : $t('common.getSmsCode') }}
-            </el-button>
-          </div>
-        </el-form-item> -->
-
-        <el-form-item>
-          <el-button
-            type="primary"
-            size="large"
-            class="submit-button"
-            :loading="loading"
-            :disabled="!canVerifyPhone"
-            @click="handleVerifyPhone"
-          >
-            {{ $t('common.nextStep') }}
-          </el-button>
-        </el-form-item>
-      </el-form>
-    </div>
-
-    <!-- 步骤2：设置新密码 -->
-    <div v-if="currentStep === 1" class="step-content">
-      <div class="phone-display">
-        {{ $t('forgotPassword.smsCodeSentTo').replace('{phone}', maskedPhone) }}
-      </div>
-
-      <el-form
-        ref="passwordFormRef"
-        :model="passwordForm"
-        :rules="passwordRules"
-        class="forgot-form"
-      >
-        <el-form-item prop="smsCode">
-          <div class="sms-wrapper">
-            <el-input
-              v-model="passwordForm.smsCode"
-              :placeholder="$t('forgotPassword.smsCode')"
-              size="large"
-              class="sms-input h-[48px]"
-              maxlength="6"
-              @input="handlePasswordSmsInput"
-            />
-            <el-button
-              :disabled="countdown > 0"
-              class="sms-button"
-              @click="handleResendSms"
-            >
-              {{ countdown > 0 ? `${countdown}${$t('forgotPassword.countdownSuffix')}` : $t('forgotPassword.resendSmsCode') }}
-            </el-button>
-          </div>
-        </el-form-item>
-
-        <el-form-item prop="password">
-          <el-input
-            v-model="passwordForm.password"
-            :type="showPassword ? 'text' : 'password'"
-            :placeholder="$t('forgotPassword.newPassword')"
-            size="large"
-            class="h-[48px]"
-            @input="handlePasswordInput"
-          >
-            <template #prefix>
-              <el-icon><Lock /></el-icon>
-            </template>
-            <template #suffix>
-              <el-icon
-                class="password-toggle"
-                @click="togglePasswordVisibility"
-              >
-                <component :is="showPassword ? 'View' : 'Hide'" />
-              </el-icon>
-            </template>
-          </el-input>
-        </el-form-item>
-
-        <el-form-item prop="confirmPassword">
-          <el-input
-            v-model="passwordForm.confirmPassword"
-            :type="showConfirmPassword ? 'text' : 'password'"
-            :placeholder="$t('forgotPassword.confirmNewPassword')"
-            size="large"
-            class="h-[48px]"
-            @input="handleConfirmPasswordInput"
-          >
-            <template #prefix>
-              <el-icon><Lock /></el-icon>
-            </template>
-            <template #suffix>
-              <el-icon
-                class="password-toggle"
-                @click="toggleConfirmPasswordVisibility"
-              >
-                <component :is="showConfirmPassword ? 'View' : 'Hide'" />
-              </el-icon>
-            </template>
-          </el-input>
-        </el-form-item>
-
-        <el-form-item>
-          <el-button
-            type="primary"
-            size="large"
-            class="submit-button"
-            :loading="loading"
-            :disabled="!canResetPassword"
-            @click="handleResetPassword"
-          >
-            {{ $t('forgotPassword.resetPassword') }}
-          </el-button>
-        </el-form-item>
-      </el-form>
-    </div>
-
-    <!-- 步骤3：完成 -->
-    <div v-if="currentStep === 2" class="step-content success-content">
-      <div class="success-icon">
-        <el-icon color="#67c23a" :size="64"><SuccessFilled /></el-icon>
-      </div>
-      <h3 class="success-title">{{ $t('forgotPassword.resetSuccess') }}</h3>
-      <p class="success-desc">{{ $t('forgotPassword.resetSuccessDesc') }}</p>
       <el-button
-        type="primary"
-        size="large"
-        class="submit-button"
-        @click="handleBackToLogin"
+        v-else
+        type="default"
+        text
+        @click="emit('back')"
       >
-        {{ $t('forgotPassword.backToLoginButton') }}
+        <el-icon><ArrowLeft /></el-icon>
+        {{ $t('common.backToLogin') }}
       </el-button>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-// 导入 Vue 内置 API 和依赖组件
-import { ref, computed, reactive, onUnmounted, getCurrentInstance } from 'vue';
+import { ref, reactive, computed } from 'vue';
+import { ElMessage, type FormInstance, type FormRules } from 'element-plus';
 import {
+  QuestionFilled,
+  PhoneFilled,
+  ArrowRight,
   ArrowLeft,
-  Check,
-  Iphone,
-  Lock,
-  View,
-  Hide,
-  SuccessFilled
+  InfoFilled,
+  CircleCheckFilled,
 } from '@element-plus/icons-vue';
-import type { FormInstance, FormRules } from 'element-plus';
-import { ElMessage } from 'element-plus';
-import router from '@/router';
-import { sendSmsCodeApi, resetPasswordApi } from '@/api/auth';
-import { md5 } from '@/utils/crypto';
+import {
+  getSecurityQuestions,
+  verifySecurityAnswer,
+  sendPhoneCode,
+  verifyPhoneCode,
+  resetPassword,
+  type SecurityQuestion,
+} from '@/api/auth/resetPassword';
 
-// 获取组件实例以访问 $t
-const { proxy } = getCurrentInstance()!;
-
-// 组件属性定义
-interface Props {
-  // 是否显示
-  visible?: boolean;
-}
-
-// 组件属性
-const props = withDefaults(defineProps<Props>(), {
-  visible: false,
-});
-
-// 组件事件定义
 const emit = defineEmits<{
-  // 返回登录页面事件
   (e: 'back'): void;
 }>();
 
-// 步骤定义
-const steps = [
-  { label: proxy?.$t('forgotPassword.stepVerifyPhone') || '验证手机号' },
-  { label: proxy?.$t('forgotPassword.stepSetPassword') || '设置新密码' },
-  { label: proxy?.$t('forgotPassword.stepComplete') || '完成' }
-];
+// ============================================================
+// 步骤状态
+// ============================================================
+const currentStep = ref(0); // 0:输入账号 1:身份验证 2:设置密码 3:完成
+const verifyMethod = ref<'security' | 'phone' | null>(null); // 身份验证方式
+const verifyToken = ref(''); // 验证通过后的凭证
 
-// 当前步骤
-const currentStep = ref(0);
+// ============================================================
+// 第一步：输入账号
+// ============================================================
+const accountFormRef = ref<FormInstance>();
+const accountForm = reactive({
+  identifier: '',
+});
+const findingAccount = ref(false);
 
-// 表单引用
+const accountRules: FormRules = {
+  identifier: [
+    { required: true, message: '请输入账号信息', trigger: 'blur' },
+  ],
+};
+
+const hasSecurityQuestions = ref(false);
+const securityQuestions = ref<SecurityQuestion[]>([]);
+
+async function handleFindAccount() {
+  const valid = await accountFormRef.value?.validate().catch(() => false);
+  if (!valid) return;
+
+  findingAccount.value = true;
+  try {
+    // 获取用户的密保问题
+    const { data: questions } = await getSecurityQuestions(accountForm.identifier);
+    securityQuestions.value = questions;
+    hasSecurityQuestions.value = questions.length > 0;
+
+    // 初始化答案表单
+    securityForm.answers = questions.map((q) => ({
+      questionId: q.questionId,
+      answer: '',
+    }));
+
+    // 如果有绑定手机号，预填（Mock 下用测试手机号）
+    phoneForm.phone = '13800138000';
+
+    currentStep.value = 1;
+  } catch (error: any) {
+    ElMessage.error(error?.message || '未找到该账号，请检查输入');
+  } finally {
+    findingAccount.value = false;
+  }
+}
+
+// ============================================================
+// 第二步：身份验证 - 方式选择
+// ============================================================
+function selectVerifyMethod(method: 'security' | 'phone') {
+  if (method === 'security' && !hasSecurityQuestions.value) {
+    ElMessage.warning('该账号未设置密保问题');
+    return;
+  }
+  verifyMethod.value = method;
+}
+
+// ============================================================
+// 第二步：密保问题验证
+// ============================================================
+const securityFormRef = ref<FormInstance>();
+const securityForm = reactive({
+  answers: [] as { questionId: string; answer: string }[],
+});
+const verifyingSecurity = ref(false);
+
+const securityAnswerRules: FormRules = {
+  answer: [
+    { required: true, message: '请输入答案', trigger: 'blur' },
+  ],
+};
+
+async function handleVerifySecurityAnswer() {
+  const valid = await securityFormRef.value?.validate().catch(() => false);
+  if (!valid) return;
+
+  verifyingSecurity.value = true;
+  try {
+    const result = await verifySecurityAnswer({
+      identifier: accountForm.identifier,
+      answers: securityForm.answers,
+    });
+    verifyToken.value = result.verifyToken;
+    ElMessage.success('验证成功');
+    currentStep.value = 2;
+  } catch (error: any) {
+    ElMessage.error(error?.message || '密保答案验证失败');
+  } finally {
+    verifyingSecurity.value = false;
+  }
+}
+
+// ============================================================
+// 第二步：手机验证码验证
+// ============================================================
 const phoneFormRef = ref<FormInstance>();
-const passwordFormRef = ref<FormInstance>();
-
-// 加载状态
-const loading = ref(false);
-
-// 手机号表单数据
 const phoneForm = reactive({
   phone: '',
-  smsCode: ''
+  code: '',
 });
+const sendingSms = ref(false);
+const verifyingPhone = ref(false);
+const smsCountdown = ref(0);
+let countdownTimer: ReturnType<typeof setInterval> | null = null;
 
-// 密码表单数据
-const passwordForm = reactive({
-  smsCode: '',
-  password: '',
-  confirmPassword: ''
-});
-
-// 密码可见性
-const showPassword = ref(false);
-const showConfirmPassword = ref(false);
-
-// 倒计时
-const countdown = ref(0);
-let countdownTimer: number | null = null;
-
-// 计算属性：是否可以发送短信
-const canSendSms = computed(() => {
-  return phoneForm.phone.length === 11;
-});
-
-// 计算属性：是否可以验证手机号
-const canVerifyPhone = computed(() => {
-  return phoneForm.phone.length === 11;
-});
-
-// 计算属性：是否可以重置密码
-const canResetPassword = computed(() => {
-  return passwordForm.smsCode.length === 6 &&
-         passwordForm.password.length >= 8 &&
-         passwordForm.confirmPassword.length >= 8;
-});
-
-// 计算属性：脱敏手机号
-const maskedPhone = computed(() => {
-  const phone = phoneForm.phone;
-  if (phone.length === 11) {
-    return phone.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2');
-  }
-  return '';
-});
-
-// 手机号表单验证规则
 const phoneRules: FormRules = {
   phone: [
-    { required: true, message: proxy?.$t('common.phoneRequired'), trigger: 'blur' },
-    {
-      pattern: /^1[3-9]\d{9}$/,
-      message: proxy?.$t('common.phoneFormatError'),
-      trigger: 'blur'
-    }
-  ]
+    { required: true, message: '请输入手机号', trigger: 'blur' },
+    { pattern: /^1[3-9]\d{9}$/, message: '手机号格式不正确', trigger: 'blur' },
+  ],
+  code: [
+    { required: true, message: '请输入验证码', trigger: 'blur' },
+    { pattern: /^\d{6}$/, message: '验证码必须是6位数字', trigger: 'blur' },
+  ],
 };
 
-// 密码表单验证规则
-const passwordRules: FormRules = {
-  smsCode: [
-    { required: true, message: proxy?.$t('common.smsCodeRequired'), trigger: 'blur' },
-    { min: 6, max: 6, message: proxy?.$t('common.smsCodeLengthError'), trigger: 'blur' }
-  ],
-  password: [
-    { required: true, message: proxy?.$t('forgotPassword.newPasswordRequired'), trigger: 'blur' },
-    { min: 8, max: 20, message: proxy?.$t('forgotPassword.newPasswordLengthError'), trigger: 'blur' },
-    {
-      pattern: /^(?![\d]+$)(?![a-zA-Z]+$)(?![^\da-zA-Z]+$).{8,20}$/,
-      message: proxy?.$t('forgotPassword.newPasswordFormatError'),
-      trigger: 'blur'
-    }
-  ],
-  confirmPassword: [
-    { required: true, message: proxy?.$t('forgotPassword.confirmNewPasswordRequired'), trigger: 'blur' },
-    {
-      validator: (rule, value, callback) => {
-        if (value !== passwordForm.password) {
-          callback(new Error(proxy?.$t('common.passwordMismatch')));
-        } else {
-          callback();
-        }
-      },
-      trigger: 'blur'
-    }
-  ]
-};
+async function handleSendPhoneCode() {
+  const phoneValid = phoneForm.phone && /^1[3-9]\d{9}$/.test(phoneForm.phone);
+  if (!phoneValid) {
+    ElMessage.warning('请输入正确的手机号');
+    return;
+  }
 
-// 方法：返回上一页
-function handleBack() {
-  emit('back');
-}
-
-// 方法：返回登录页
-function handleBackToLogin() {
-  emit('back');
-}
-
-// 方法：手机号输入处理
-function handlePhoneInput(value: string) {
-  phoneForm.phone = value.replace(/\D/g, '');
-}
-
-// 方法：短信验证码输入处理（步骤1）
-function handleSmsCodeInput(value: string) {
-  phoneForm.smsCode = value.replace(/\D/g, '');
-}
-
-// 方法：短信验证码输入处理（步骤2）
-function handlePasswordSmsInput(value: string) {
-  passwordForm.smsCode = value.replace(/\D/g, '');
-}
-
-// 方法：发送短信验证码
-async function handleSendSms() {
-  if (!canSendSms.value) return;
-
-  loading.value = true;
+  sendingSms.value = true;
   try {
-    // TODO: 调用后端API发送短信验证码
-    // await sendSmsCode({ phone: phoneForm.phone });
-
-    ElMessage.success(proxy?.$t('common.smsCodeSent'));
+    await sendPhoneCode({ phone: phoneForm.phone, scene: 'reset-password' });
+    ElMessage.success('验证码已发送');
     startCountdown();
   } catch (error: any) {
-    ElMessage.error(error.message || proxy?.$t('common.smsCodeSendFailed'));
+    ElMessage.error(error?.message || '发送验证码失败');
   } finally {
-    loading.value = false;
+    sendingSms.value = false;
   }
 }
 
-// 方法：重新发送短信验证码
-async function handleResendSms() {
-  loading.value = true;
-  try {
-    await sendSmsCodeApi({ phone: phoneForm.phone, codeType: 'resetPassword' });
-    ElMessage.success(proxy?.$t('forgotPassword.smsCodeResent'));
-    startCountdown();
-  } catch (error: any) {
-    ElMessage.error(error.message || proxy?.$t('common.smsCodeSendFailed'));
-  } finally {
-    loading.value = false;
-  }
-}
-
-// 方法：开始倒计时
 function startCountdown() {
-  countdown.value = 60;
-  if (countdownTimer) {
-    clearInterval(countdownTimer);
-  }
-  countdownTimer = window.setInterval(() => {
-    countdown.value--;
-    if (countdown.value <= 0) {
-      if (countdownTimer) {
-        clearInterval(countdownTimer);
-        countdownTimer = null;
-      }
+  smsCountdown.value = 60;
+  if (countdownTimer) clearInterval(countdownTimer);
+  countdownTimer = setInterval(() => {
+    smsCountdown.value--;
+    if (smsCountdown.value <= 0) {
+      clearInterval(countdownTimer!);
+      countdownTimer = null;
     }
   }, 1000);
 }
 
-// 方法：验证手机号
-async function handleVerifyPhone() {
+async function handleVerifyPhoneCode() {
   const valid = await phoneFormRef.value?.validate().catch(() => false);
   if (!valid) return;
 
-  loading.value = true;
+  verifyingPhone.value = true;
   try {
-    await sendSmsCodeApi({ phone: phoneForm.phone, codeType: 'resetPassword' });
-    ElMessage.success(proxy?.$t('common.smsCodeSent'));
-    currentStep.value = 1;
-    startCountdown();
+    const result = await verifyPhoneCode({
+      phone: phoneForm.phone,
+      code: phoneForm.code,
+      scene: 'reset-password',
+    });
+    verifyToken.value = result.verifyToken;
+    ElMessage.success('验证成功');
+    currentStep.value = 2;
   } catch (error: any) {
-    ElMessage.error(error.message || proxy?.$t('common.smsCodeSendFailed'));
+    ElMessage.error(error?.message || '验证码校验失败');
   } finally {
-    loading.value = false;
+    verifyingPhone.value = false;
   }
 }
 
-// 方法：密码输入处理
-function handlePasswordInput(value: string) {
-  passwordForm.password = value;
-}
+// ============================================================
+// 第三步：设置新密码
+// ============================================================
+const passwordFormRef = ref<FormInstance>();
+const passwordForm = reactive({
+  newPassword: '',
+  confirmPassword: '',
+});
+const resettingPassword = ref(false);
 
-// 方法：确认密码输入处理
-function handleConfirmPasswordInput(value: string) {
-  passwordForm.confirmPassword = value;
-}
+const validatePassword = (_rule: any, value: string, callback: any) => {
+  if (!value) {
+    callback(new Error('请输入新密码'));
+    return;
+  }
+  if (value.length < 8 || value.length > 20) {
+    callback(new Error('密码长度为8-20位'));
+    return;
+  }
+  // 检查是否包含至少两种：字母、数字、特殊字符
+  let types = 0;
+  if (/[a-zA-Z]/.test(value)) types++;
+  if (/[0-9]/.test(value)) types++;
+  if (/[^a-zA-Z0-9]/.test(value)) types++;
+  if (types < 2) {
+    callback(new Error('密码必须包含字母、数字和特殊字符中至少两种'));
+    return;
+  }
+  callback();
+};
 
-// 方法：切换密码可见性
-function togglePasswordVisibility() {
-  showPassword.value = !showPassword.value;
-}
+const validateConfirmPassword = (_rule: any, value: string, callback: any) => {
+  if (!value) {
+    callback(new Error('请再次输入新密码'));
+    return;
+  }
+  if (value !== passwordForm.newPassword) {
+    callback(new Error('两次输入密码不一致'));
+    return;
+  }
+  callback();
+};
 
-// 方法：切换确认密码可见性
-function toggleConfirmPasswordVisibility() {
-  showConfirmPassword.value = !showConfirmPassword.value;
-}
+const passwordRules: FormRules = {
+  newPassword: [{ validator: validatePassword, trigger: 'blur' }],
+  confirmPassword: [{ validator: validateConfirmPassword, trigger: 'blur' }],
+};
 
-// 方法：重置密码
 async function handleResetPassword() {
   const valid = await passwordFormRef.value?.validate().catch(() => false);
   if (!valid) return;
 
-  loading.value = true;
+  resettingPassword.value = true;
   try {
-    await resetPasswordApi({
-      phone: phoneForm.phone,
-      code: passwordForm.smsCode,
-      password: md5(passwordForm.password)
+    await resetPassword({
+      verifyToken: verifyToken.value,
+      newPassword: passwordForm.newPassword,
     });
-    ElMessage.success(proxy?.$t('forgotPassword.resetPasswordSuccess') || '密码重置成功！');
-    currentStep.value = 2;
+    ElMessage.success('密码重置成功');
+    currentStep.value = 3;
   } catch (error: any) {
-    ElMessage.error(error.message || proxy?.$t('forgotPassword.resetPasswordFailed') || '密码重置失败，请重试');
+    ElMessage.error(error?.message || '重置密码失败');
   } finally {
-    loading.value = false;
+    resettingPassword.value = false;
   }
 }
 
-// 生命周期钩子：组件卸载时清理
-onUnmounted(() => {
-  if (countdownTimer) {
-    clearInterval(countdownTimer);
+// ============================================================
+// 导航
+// ============================================================
+function handlePrevStep() {
+  if (currentStep.value === 1) {
+    // 从身份验证回到输入账号
+    verifyMethod.value = null;
+    currentStep.value = 0;
+  } else if (currentStep.value === 2) {
+    currentStep.value = 1;
   }
-});
+}
+
+function handleGoToLogin() {
+  emit('back');
+}
 </script>
 
 <style lang="scss" scoped>
-/* 忘记密码容器样式 */
 .forgot-password {
-  padding: 20px 0;
+  padding: 8px 0;
 }
 
-/* 返回按钮样式 */
-.back-button {
-  margin-bottom: 24px;
-}
-
-/* 标题区域样式 */
-.title-section {
+.fp-header {
   text-align: center;
-  margin-bottom: 32px;
-}
+  margin-bottom: 24px;
 
-.title {
-  font-size: 24px;
-  font-weight: 600;
-  color: var(--el-text-color-primary);
-  margin: 0 0 8px 0;
-}
-
-.subtitle {
-  font-size: 14px;
-  color: var(--el-text-color-secondary);
-  margin: 0;
-}
-
-/* 步骤指示器样式 */
-.steps-indicator {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin-bottom: 32px;
-  gap: 0;
-}
-
-.step {
-  display: flex;
-  align-items: center;
-  position: relative;
-
-  &:not(:last-child)::after {
-    content: '';
-    position: absolute;
-    left: calc(50% + 20px);
-    top: 50%;
-    width: 60px;
-    height: 2px;
-    background: var(--el-border-color);
-    transform: translateY(-50%);
+  .fp-title {
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--el-text-color-primary);
+    margin: 0 0 8px;
   }
 
-  &.completed:not(:last-child)::after {
-    background: var(--el-color-primary);
+  .fp-subtitle {
+    font-size: 14px;
+    color: var(--el-text-color-secondary);
+    margin: 0;
+  }
+}
+
+.fp-steps {
+  margin-bottom: 28px;
+
+  :deep(.el-step__title) {
+    font-size: 13px;
+  }
+}
+
+.fp-content {
+  min-height: 200px;
+}
+
+.step-panel {
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fp-full-btn {
+  width: 100%;
+  margin-top: 16px;
+}
+
+// ===== 身份验证方式选择 =====
+.verify-methods {
+  .verify-method-title {
+    font-size: 14px;
+    color: var(--el-text-color-secondary);
+    margin-bottom: 16px;
+  }
+}
+
+.verify-method-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid var(--el-border-color);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-bottom: 12px;
+
+  &:hover:not(.disabled) {
+    border-color: var(--el-color-primary);
+    background: var(--el-color-primary-light-9);
   }
 
-  &:last-child {
-    .step-number {
-      margin-right: 0;
+  &.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .method-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    background: var(--el-color-primary-light-9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    color: var(--el-color-primary);
+    flex-shrink: 0;
+  }
+
+  .method-info {
+    flex: 1;
+
+    .method-name {
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--el-text-color-primary);
+      margin-bottom: 4px;
+    }
+
+    .method-desc {
+      font-size: 12px;
+      color: var(--el-text-color-secondary);
     }
   }
+
+  .method-arrow {
+    color: var(--el-text-color-placeholder);
+    font-size: 16px;
+  }
 }
 
-.step-number {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: var(--el-fill-color-light);
-  color: var(--el-text-color-secondary);
+// ===== 验证表单 =====
+.verify-form {
+  .verify-form-header {
+    margin-bottom: 16px;
+  }
+}
+
+.sms-row {
+  display: flex;
+  gap: 10px;
+
+  .sms-input {
+    flex: 1;
+  }
+
+  .el-button {
+    flex-shrink: 0;
+    min-width: 110px;
+  }
+}
+
+// ===== 密码提示 =====
+.password-hint {
   display: flex;
   align-items: center;
-  justify-content: center;
-  font-size: 14px;
-  font-weight: 600;
-  margin-right: 8px;
-  transition: all 0.3s;
-}
-
-.step.active .step-number {
-  background: var(--el-color-primary);
-  color: white;
-}
-
-.step.completed .step-number {
-  background: var(--el-color-primary);
-  color: white;
-}
-
-.step-label {
-  font-size: 14px;
+  gap: 6px;
+  padding: 10px 12px;
+  background: var(--el-color-info-light-9);
+  border-radius: 6px;
+  font-size: 12px;
   color: var(--el-text-color-secondary);
-  white-space: nowrap;
+  margin-bottom: 4px;
+
+  .el-icon {
+    color: var(--el-color-info);
+    flex-shrink: 0;
+  }
 }
 
-.step.active .step-label {
-  color: var(--el-color-primary);
-  font-weight: 500;
-}
-
-.step.completed .step-label {
-  color: var(--el-text-color-primary);
-}
-
-/* 步骤内容区域样式 */
-.step-content {
-  width: 100%;
-}
-
-/* 手机号显示样式 */
-.phone-display {
+// ===== 成功页面 =====
+.success-panel {
   text-align: center;
-  font-size: 14px;
-  color: var(--el-text-color-secondary);
-  margin-bottom: 24px;
-  padding: 12px;
-  background: var(--el-fill-color-light);
-  border-radius: 8px;
-}
+  padding-top: 20px;
 
-.phone-number {
-  color: var(--el-color-primary);
-  font-weight: 500;
-}
-
-/* 表单样式 */
-.forgot-form {
-  width: 100%;
-}
-
-/* 短信验证码输入框容器样式 */
-.sms-wrapper {
-  display: flex;
-  gap: 12px;
-  width: 100%;
-}
-
-.sms-input {
-  flex: 1;
-}
-
-.sms-button {
-  width: 130px;
-  height: 48px;
-  white-space: nowrap;
-}
-
-/* 密码切换按钮样式 */
-.password-toggle {
-  cursor: pointer;
-  color: var(--el-text-color-placeholder);
-  transition: color 0.3s;
-
-  &:hover {
-    color: var(--el-color-primary);
-  }
-}
-
-/* 提交按钮样式 */
-.submit-button {
-  width: 100%;
-  height: 48px;
-  font-size: 16px;
-}
-
-/* 成功页面样式 */
-.success-content {
-  text-align: center;
-  padding: 40px 0;
-}
-
-.success-icon {
-  margin-bottom: 24px;
-}
-
-.success-title {
-  font-size: 20px;
-  font-weight: 600;
-  color: var(--el-text-color-primary);
-  margin: 0 0 12px 0;
-}
-
-.success-desc {
-  font-size: 14px;
-  color: var(--el-text-color-secondary);
-  margin: 0 0 32px 0;
-}
-
-/* 响应式样式 */
-@media (max-width: 768px) {
-  .forgot-password {
-    padding: 16px 0;
+  .success-icon {
+    font-size: 56px;
+    color: var(--el-color-success);
+    margin-bottom: 16px;
   }
 
-  .title-section {
-    margin-bottom: 24px;
-  }
-
-  .title {
+  .success-title {
     font-size: 20px;
+    font-weight: 600;
+    color: var(--el-text-color-primary);
+    margin: 0 0 8px;
   }
 
-  .steps-indicator {
-    margin-bottom: 24px;
-  }
-
-  .step:not(:last-child)::after {
-    width: 40px;
-    left: calc(50% + 16px);
-  }
-
-  .step-label {
-    font-size: 12px;
-  }
-
-  .sms-wrapper {
-    flex-direction: column;
-  }
-
-  .sms-button {
-    width: 100%;
+  .success-desc {
+    font-size: 14px;
+    color: var(--el-text-color-secondary);
+    margin: 0 0 24px;
   }
 }
 
-@media (max-width: 480px) {
-  .step:not(:last-child)::after {
-    width: 30px;
-    left: calc(50% + 14px);
+// ===== 底部 =====
+.fp-footer {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--el-border-color);
+}
+
+// 暗色模式
+html.dark {
+  .verify-method-card {
+    border-color: var(--el-border-color);
+
+    &:hover:not(.disabled) {
+      border-color: var(--el-color-primary);
+      background: rgba(var(--el-color-primary-rgb), 0.1);
+    }
+
+    .method-icon {
+      background: rgba(var(--el-color-primary-rgb), 0.15);
+    }
   }
 
-  .step-number {
-    width: 28px;
-    height: 28px;
-    font-size: 12px;
+  .password-hint {
+    background: rgba(var(--el-color-info-rgb), 0.1);
   }
 }
 </style>

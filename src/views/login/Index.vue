@@ -64,6 +64,10 @@
       </div>
 
       <div class="ram-link">
+        <router-link to="/login/ram" class="register-link-text">
+          RAM 子账号登录
+        </router-link>
+        <span class="link-separator">|</span>
         <a href="javascript:void(0)" class="register-link-text" @click="handleDownloadApp">
           {{ $t('login.downloadApp') }}
         </a>
@@ -163,7 +167,21 @@ async function handleLogin(data?: any) {
     try {
       const redirectUrl = route.query.redirect as string || '/';
       userStore.saveRedirectUrl(redirectUrl);
-      
+
+      // 二维码登录已在子组件内完成，直接设置登录状态并跳转
+      if (data.loginType === 'qrcode' || data.accessToken) {
+        userStore.isLogin.value = true;
+        const needAuth = redirectUrl.startsWith('http://') || redirectUrl.startsWith('https://');
+        router.push({
+          path: '/login/success',
+          query: {
+            redirect: redirectUrl,
+            needAuth: needAuth ? 'true' : 'false',
+          },
+        });
+        return;
+      }
+
       if (data.type === 'phone') {
         await userStore.loginByPhone(data.phone, data.code);
       } else {
@@ -176,9 +194,9 @@ async function handleLogin(data?: any) {
         };
         await userStore.login(loginData);
       }
-      
+
       const needAuth = redirectUrl.startsWith('http://') || redirectUrl.startsWith('https://');
-      
+
       router.push({
         path: '/login/success',
         query: {

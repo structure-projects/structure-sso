@@ -1,15 +1,19 @@
+/**
+ * 标准 MD5 实现（RFC 1321），与 Hutool DigestUtil.md5Hex 输出完全一致
+ * - UTF-8 编码输入
+ * - 小端序处理
+ * - 小写十六进制输出
+ */
 export function md5(str: string): string {
-  let md5String = '';
+  // UTF-8 编码
+  const utf8 = unescape(encodeURIComponent(str));
+
   const rotateLeft = (value: number, amount: number): number => {
-    const tmp = value << amount;
-    const tmp2 = (value >>> (32 - amount)) & 0xFFFFFFFF;
-    return (tmp | tmp2) & 0xFFFFFFFF;
+    return ((value << amount) | (value >>> (32 - amount))) >>> 0;
   };
 
   const addUnsigned = (x: number, y: number): number => {
-    const lsw = (x & 0xFFFF) + (y & 0xFFFF);
-    const msw = (x >> 16) + (y >> 16) + (lsw >> 16);
-    return (msw << 16) | (lsw & 0xFFFF);
+    return (x + y) >>> 0;
   };
 
   const F = (x: number, y: number, z: number): number => (x & y) | (~x & z);
@@ -26,24 +30,26 @@ export function md5(str: string): string {
   const II = (a: number, b: number, c: number, d: number, x: number, s: number, ac: number): number =>
     addUnsigned(rotateLeft(addUnsigned(addUnsigned(a, I(b, c, d)), addUnsigned(x, ac)), s), b);
 
-  const convertToWordArray = (str: string): number[] => {
+  // 小端序：将字符串转换为字数组
+  const convertToWordArray = (input: string): number[] => {
     const wordArray: number[] = [];
-    for (let i = 0; i < str.length * 8; i += 8) {
-      wordArray[i >> 5] |= (str.charCodeAt(i / 8) & 0xFF) << (24 - i % 32);
+    const len = input.length;
+    for (let i = 0; i < len * 8; i += 8) {
+      wordArray[i >> 5] = (wordArray[i >> 5] || 0) | ((input.charCodeAt(i / 8) & 0xff) << (i % 32));
     }
     return wordArray;
   };
 
-  const strLen = str.length;
-  const wordArray = convertToWordArray(str);
-  const bitLen = strLen * 8;
+  const wordArray = convertToWordArray(utf8);
+  const bitLen = utf8.length * 8;
 
-  wordArray[bitLen >> 5] |= 0x80 << (24 - (bitLen % 32));
-  wordArray[((bitLen + 64) >>> 9 << 4) + 14] = bitLen;
+  // 填充
+  wordArray[bitLen >> 5] = (wordArray[bitLen >> 5] || 0) | (0x80 << (bitLen % 32));
+  wordArray[(((bitLen + 64) >>> 9) << 4) + 14] = bitLen;
 
   let a = 0x67452301;
-  let b = 0xEFCDAB89;
-  let c = 0x98BADCFE;
+  let b = 0xefcdab89;
+  let c = 0x98badcfe;
   let d = 0x10325476;
 
   for (let i = 0; i < wordArray.length; i += 16) {
@@ -52,73 +58,73 @@ export function md5(str: string): string {
     const oldc = c;
     const oldd = d;
 
-    a = FF(a, b, c, d, wordArray[i], 7, 0xD76AA478);
-    d = FF(d, a, b, c, wordArray[i + 1], 12, 0xE8C7B756);
-    c = FF(c, d, a, b, wordArray[i + 2], 17, 0x242070DB);
-    b = FF(b, c, d, a, wordArray[i + 3], 22, 0xC1BDCEEE);
-    a = FF(a, b, c, d, wordArray[i + 4], 7, 0xF57C0FAF);
-    d = FF(d, a, b, c, wordArray[i + 5], 12, 0x4787C62A);
-    c = FF(c, d, a, b, wordArray[i + 6], 17, 0xA8304613);
-    b = FF(b, c, d, a, wordArray[i + 7], 22, 0xFD469501);
-    a = FF(a, b, c, d, wordArray[i + 8], 7, 0x698098D8);
-    d = FF(d, a, b, c, wordArray[i + 9], 12, 0x8B44F7AF);
-    c = FF(c, d, a, b, wordArray[i + 10], 17, 0xFFFF5BB1);
-    b = FF(b, c, d, a, wordArray[i + 11], 22, 0x895CD7BE);
-    a = FF(a, b, c, d, wordArray[i + 12], 7, 0x6B901122);
-    d = FF(d, a, b, c, wordArray[i + 13], 12, 0xFD987193);
-    c = FF(c, d, a, b, wordArray[i + 14], 17, 0xA679438E);
-    b = FF(b, c, d, a, wordArray[i + 15], 22, 0x49B40821);
+    a = FF(a, b, c, d, wordArray[i] || 0, 7, 0xd76aa478);
+    d = FF(d, a, b, c, wordArray[i + 1] || 0, 12, 0xe8c7b756);
+    c = FF(c, d, a, b, wordArray[i + 2] || 0, 17, 0x242070db);
+    b = FF(b, c, d, a, wordArray[i + 3] || 0, 22, 0xc1bdceee);
+    a = FF(a, b, c, d, wordArray[i + 4] || 0, 7, 0xf57c0faf);
+    d = FF(d, a, b, c, wordArray[i + 5] || 0, 12, 0x4787c62a);
+    c = FF(c, d, a, b, wordArray[i + 6] || 0, 17, 0xa8304613);
+    b = FF(b, c, d, a, wordArray[i + 7] || 0, 22, 0xfd469501);
+    a = FF(a, b, c, d, wordArray[i + 8] || 0, 7, 0x698098d8);
+    d = FF(d, a, b, c, wordArray[i + 9] || 0, 12, 0x8b44f7af);
+    c = FF(c, d, a, b, wordArray[i + 10] || 0, 17, 0xffff5bb1);
+    b = FF(b, c, d, a, wordArray[i + 11] || 0, 22, 0x895cd7be);
+    a = FF(a, b, c, d, wordArray[i + 12] || 0, 7, 0x6b901122);
+    d = FF(d, a, b, c, wordArray[i + 13] || 0, 12, 0xfd987193);
+    c = FF(c, d, a, b, wordArray[i + 14] || 0, 17, 0xa679438e);
+    b = FF(b, c, d, a, wordArray[i + 15] || 0, 22, 0x49b40821);
 
-    a = GG(a, b, c, d, wordArray[i + 1], 5, 0xF61E2562);
-    d = GG(d, a, b, c, wordArray[i + 6], 9, 0xC040B340);
-    c = GG(c, d, a, b, wordArray[i + 11], 14, 0x265E5A51);
-    b = GG(b, c, d, a, wordArray[i], 20, 0xE9B6C7AA);
-    a = GG(a, b, c, d, wordArray[i + 5], 5, 0xD62F105D);
-    d = GG(d, a, b, c, wordArray[i + 10], 9, 0x02441453);
-    c = GG(c, d, a, b, wordArray[i + 15], 14, 0xD8A1E681);
-    b = GG(b, c, d, a, wordArray[i + 4], 20, 0xE7D3FBC8);
-    a = GG(a, b, c, d, wordArray[i + 9], 5, 0x21E1CDE6);
-    d = GG(d, a, b, c, wordArray[i + 14], 9, 0xC33707D6);
-    c = GG(c, d, a, b, wordArray[i + 3], 14, 0xF4D50D87);
-    b = GG(b, c, d, a, wordArray[i + 8], 20, 0x455A14ED);
-    a = GG(a, b, c, d, wordArray[i + 13], 5, 0xA9E3E905);
-    d = GG(d, a, b, c, wordArray[i + 2], 9, 0xFCEFA3F8);
-    c = GG(c, d, a, b, wordArray[i + 7], 14, 0x676F02D9);
-    b = GG(b, c, d, a, wordArray[i + 12], 20, 0x8D2A4C8A);
+    a = GG(a, b, c, d, wordArray[i + 1] || 0, 5, 0xf61e2562);
+    d = GG(d, a, b, c, wordArray[i + 6] || 0, 9, 0xc040b340);
+    c = GG(c, d, a, b, wordArray[i + 11] || 0, 14, 0x265e5a51);
+    b = GG(b, c, d, a, wordArray[i] || 0, 20, 0xe9b6c7aa);
+    a = GG(a, b, c, d, wordArray[i + 5] || 0, 5, 0xd62f105d);
+    d = GG(d, a, b, c, wordArray[i + 10] || 0, 9, 0x02441453);
+    c = GG(c, d, a, b, wordArray[i + 15] || 0, 14, 0xd8a1e681);
+    b = GG(b, c, d, a, wordArray[i + 4] || 0, 20, 0xe7d3fbc8);
+    a = GG(a, b, c, d, wordArray[i + 9] || 0, 5, 0x21e1cde6);
+    d = GG(d, a, b, c, wordArray[i + 14] || 0, 9, 0xc33707d6);
+    c = GG(c, d, a, b, wordArray[i + 3] || 0, 14, 0xf4d50d87);
+    b = GG(b, c, d, a, wordArray[i + 8] || 0, 20, 0x455a14ed);
+    a = GG(a, b, c, d, wordArray[i + 13] || 0, 5, 0xa9e3e905);
+    d = GG(d, a, b, c, wordArray[i + 2] || 0, 9, 0xfcefa3f8);
+    c = GG(c, d, a, b, wordArray[i + 7] || 0, 14, 0x676f02d9);
+    b = GG(b, c, d, a, wordArray[i + 12] || 0, 20, 0x8d2a4c8a);
 
-    a = HH(a, b, c, d, wordArray[i + 5], 4, 0xFFFA3942);
-    d = HH(d, a, b, c, wordArray[i + 8], 11, 0x8771F681);
-    c = HH(c, d, a, b, wordArray[i + 11], 16, 0x6D9D6122);
-    b = HH(b, c, d, a, wordArray[i + 14], 23, 0xFDE5380C);
-    a = HH(a, b, c, d, wordArray[i + 1], 4, 0xA4BEEA44);
-    d = HH(d, a, b, c, wordArray[i + 4], 11, 0x4BDECFA9);
-    c = HH(c, d, a, b, wordArray[i + 7], 16, 0xF6BB4B60);
-    b = HH(b, c, d, a, wordArray[i + 10], 23, 0xBEBFBC70);
-    a = HH(a, b, c, d, wordArray[i + 13], 4, 0x289B7EC6);
-    d = HH(d, a, b, c, wordArray[i], 11, 0xEAA127FA);
-    c = HH(c, d, a, b, wordArray[i + 3], 16, 0xD4EF3085);
-    b = HH(b, c, d, a, wordArray[i + 6], 23, 0x04881D05);
-    a = HH(a, b, c, d, wordArray[i + 9], 4, 0xD9D4D039);
-    d = HH(d, a, b, c, wordArray[i + 12], 11, 0xE6DB99E5);
-    c = HH(c, d, a, b, wordArray[i + 15], 16, 0x1FA27CF8);
-    b = HH(b, c, d, a, wordArray[i + 2], 23, 0xC4AC5665);
+    a = HH(a, b, c, d, wordArray[i + 5] || 0, 4, 0xfffa3942);
+    d = HH(d, a, b, c, wordArray[i + 8] || 0, 11, 0x8771f681);
+    c = HH(c, d, a, b, wordArray[i + 11] || 0, 16, 0x6d9d6122);
+    b = HH(b, c, d, a, wordArray[i + 14] || 0, 23, 0xfde5380c);
+    a = HH(a, b, c, d, wordArray[i + 1] || 0, 4, 0xa4beea44);
+    d = HH(d, a, b, c, wordArray[i + 4] || 0, 11, 0x4bdecfa9);
+    c = HH(c, d, a, b, wordArray[i + 7] || 0, 16, 0xf6bb4b60);
+    b = HH(b, c, d, a, wordArray[i + 10] || 0, 23, 0xbebfbc70);
+    a = HH(a, b, c, d, wordArray[i + 13] || 0, 4, 0x289b7ec6);
+    d = HH(d, a, b, c, wordArray[i] || 0, 11, 0xeaa127fa);
+    c = HH(c, d, a, b, wordArray[i + 3] || 0, 16, 0xd4ef3085);
+    b = HH(b, c, d, a, wordArray[i + 6] || 0, 23, 0x04881d05);
+    a = HH(a, b, c, d, wordArray[i + 9] || 0, 4, 0xd9d4d039);
+    d = HH(d, a, b, c, wordArray[i + 12] || 0, 11, 0xe6db99e5);
+    c = HH(c, d, a, b, wordArray[i + 15] || 0, 16, 0x1fa27cf8);
+    b = HH(b, c, d, a, wordArray[i + 2] || 0, 23, 0xc4ac5665);
 
-    a = II(a, b, c, d, wordArray[i], 6, 0xF4292244);
-    d = II(d, a, b, c, wordArray[i + 7], 10, 0x432AFF97);
-    c = II(c, d, a, b, wordArray[i + 14], 15, 0xAB9423A7);
-    b = II(b, c, d, a, wordArray[i + 5], 21, 0xFC93A039);
-    a = II(a, b, c, d, wordArray[i + 12], 6, 0x655B59C3);
-    d = II(d, a, b, c, wordArray[i + 3], 10, 0x8F0CCC92);
-    c = II(c, d, a, b, wordArray[i + 10], 15, 0xFFEFF47D);
-    b = II(b, c, d, a, wordArray[i + 1], 21, 0x85845DD1);
-    a = II(a, b, c, d, wordArray[i + 8], 6, 0x6FA87E4F);
-    d = II(d, a, b, c, wordArray[i + 15], 10, 0xFE2CE6E0);
-    c = II(c, d, a, b, wordArray[i + 6], 15, 0xA3014314);
-    b = II(b, c, d, a, wordArray[i + 13], 21, 0x4E0811A1);
-    a = II(a, b, c, d, wordArray[i + 4], 6, 0xF7537E82);
-    d = II(d, a, b, c, wordArray[i + 11], 10, 0xBD3AF235);
-    c = II(c, d, a, b, wordArray[i + 2], 15, 0x2AD7D2BB);
-    b = II(b, c, d, a, wordArray[i + 9], 21, 0xEB86D391);
+    a = II(a, b, c, d, wordArray[i] || 0, 6, 0xf4292244);
+    d = II(d, a, b, c, wordArray[i + 7] || 0, 10, 0x432aff97);
+    c = II(c, d, a, b, wordArray[i + 14] || 0, 15, 0xab9423a7);
+    b = II(b, c, d, a, wordArray[i + 5] || 0, 21, 0xfc93a039);
+    a = II(a, b, c, d, wordArray[i + 12] || 0, 6, 0x655b59c3);
+    d = II(d, a, b, c, wordArray[i + 3] || 0, 10, 0x8f0ccc92);
+    c = II(c, d, a, b, wordArray[i + 10] || 0, 15, 0xffeff47d);
+    b = II(b, c, d, a, wordArray[i + 1] || 0, 21, 0x85845dd1);
+    a = II(a, b, c, d, wordArray[i + 8] || 0, 6, 0x6fa87e4f);
+    d = II(d, a, b, c, wordArray[i + 15] || 0, 10, 0xfe2ce6e0);
+    c = II(c, d, a, b, wordArray[i + 6] || 0, 15, 0xa3014314);
+    b = II(b, c, d, a, wordArray[i + 13] || 0, 21, 0x4e0811a1);
+    a = II(a, b, c, d, wordArray[i + 4] || 0, 6, 0xf7537e82);
+    d = II(d, a, b, c, wordArray[i + 11] || 0, 10, 0xbd3af235);
+    c = II(c, d, a, b, wordArray[i + 2] || 0, 15, 0x2ad7d2bb);
+    b = II(b, c, d, a, wordArray[i + 9] || 0, 21, 0xeb86d391);
 
     a = addUnsigned(a, olda);
     b = addUnsigned(b, oldb);
@@ -126,14 +132,14 @@ export function md5(str: string): string {
     d = addUnsigned(d, oldd);
   }
 
+  // 小端序输出
   const toHex = (val: number): string => {
     let hex = '';
     for (let i = 0; i < 4; i++) {
-      hex += ((val >> (8 * (3 - i))) & 0xFF).toString(16).padStart(2, '0');
+      hex += ((val >>> (i * 8)) & 0xff).toString(16).padStart(2, '0');
     }
     return hex;
   };
 
-  md5String = toHex(a) + toHex(b) + toHex(c) + toHex(d);
-  return md5String.toLowerCase();
+  return (toHex(a) + toHex(b) + toHex(c) + toHex(d)).toLowerCase();
 }

@@ -6,7 +6,7 @@
     </div>
 
     <div class="card-body">
-      <QRCodeLogin @login="handleLogin" :loading="isLoading" />
+      <QRCodeLogin @login="handleLogin" />
     </div>
 
     <div class="card-footer" v-if="showFooter">
@@ -22,50 +22,38 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, getCurrentInstance } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import QRCodeLogin from './components/QRCodeLogin.vue';
 import { useUserStoreHook } from '@/store/modules/user';
-import { qrcodeLoginApi } from '@/api/auth';
+import type { LoginResult } from '@/api/auth/types';
 
 const router = useRouter();
 const route = useRoute();
 const userStore = useUserStoreHook();
-const isLoading = ref(false);
 const showFooter = ref(true);
 
 const { proxy } = getCurrentInstance() as any;
 
-const handleLogin = async (data: any) => {
+const handleLogin = async (data: LoginResult) => {
   const redirectUrl = (route.query.redirect as string) || '/';
   userStore.saveRedirectUrl(redirectUrl);
-  
-  isLoading.value = true;
-  try {
-    await qrcodeLoginApi({
-      authCode: data.authCode,
-      codeVerifier: data.codeVerifier,
-      state: data.state,
-      qrcodeId: data.qrcodeId,
-    });
-    
-    userStore.isLogin = true;
-    
-    const needAuth = redirectUrl.startsWith('http://') || redirectUrl.startsWith('https://');
-    
-    router.push({
-      path: '/login/success',
-      query: {
-        redirect: redirectUrl,
-        needAuth: needAuth ? 'true' : 'false',
-      },
-    });
-  } catch (error) {
-    ElMessage.error(proxy?.$t('login.loginFailed') || '登录失败，请重试');
-  } finally {
-    isLoading.value = false;
+
+  userStore.isLogin.value = true;
+  if (data?.accessToken) {
+    userStore.token.value = data.accessToken;
   }
+
+  const needAuth = redirectUrl.startsWith('http://') || redirectUrl.startsWith('https://');
+
+  router.push({
+    path: '/login/success',
+    query: {
+      redirect: redirectUrl,
+      needAuth: needAuth ? 'true' : 'false',
+    },
+  });
 };
 
 onMounted(() => {

@@ -24,6 +24,10 @@ const routes = [
         path: "qrcode",
         component: () => import("@/views/login/QRCodeLoginPage.vue"),
       },
+      {
+        path: "ram",
+        component: () => import("@/views/login/RAMLoginPage.vue"),
+      },
     ],
   },
   {
@@ -59,6 +63,18 @@ const routes = [
     name: "OAuth2Authorize",
     component: () => import("@/views/login/OAuth2Authorize.vue"),
     meta: { hidden: true },
+  },
+  {
+    path: "/forgot-password",
+    name: "ForgotPassword",
+    component: LoginLayout,
+    meta: { hidden: true },
+    children: [
+      {
+        path: "",
+        component: () => import("@/views/login/ForgotPasswordPage.vue"),
+      },
+    ],
   },
   {
     path: "/",

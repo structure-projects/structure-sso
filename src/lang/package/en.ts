@@ -143,7 +143,7 @@ export default {
   // 忘记密码页面国际化
   forgotPassword: {
     title: 'Forgot Password',
-    subtitle: 'Retrieve password through phone verification',
+    subtitle: 'Retrieve password through identity verification',
     phone: 'Registered phone number',
     smsCode: 'SMS Verify Code',
     newPassword: 'New Password',
@@ -151,9 +151,31 @@ export default {
     resendSmsCode: 'Resend',
     resetPassword: 'Reset Password',
     // 步骤
-    stepVerifyPhone: 'Verify Phone',
+    stepInputAccount: 'Enter Account',
+    stepVerifyIdentity: 'Identity Verification',
     stepSetPassword: 'Set Password',
     stepComplete: 'Complete',
+    // 第一步：输入账号
+    accountPlaceholder: 'Enter username / phone / email',
+    accountRequired: 'Please enter your account',
+    findAccount: 'Find Account',
+    accountNotFound: 'Account not found, please check your input',
+    // 第二步：身份验证
+    verifyMethodTitle: 'Select Verification Method',
+    verifyBySecurityQuestion: 'Security Questions',
+    verifyByPhone: 'SMS Verification',
+    securityQuestionDesc: 'Answer your security questions',
+    phoneVerifyDesc: 'Receive verification code via bound phone',
+    // 密保问题
+    securityQuestions: 'Security Questions',
+    answerPlaceholder: 'Enter your answer',
+    answerRequired: 'Please enter your answer',
+    submitAnswers: 'Submit',
+    // 手机验证码
+    phonePlaceholder: 'Enter phone number',
+    smsCodePlaceholder: 'Enter verification code',
+    sendSmsCode: 'Send Code',
+    verifyPhoneCode: 'Verify',
     // 成功页面
     resetSuccess: 'Password Reset Successful',
     resetSuccessDesc: 'Please login with your new password',
@@ -173,6 +195,12 @@ export default {
     resetPasswordFailed: 'Failed to reset password',
     // 手机号显示
     smsCodeSentTo: 'Verify code sent to {phone}',
+    // 安全提示
+    securityAnswerError: 'Security answer verification failed, please check your answers',
+    phoneNotBound: 'This account has no phone number bound',
+    goToLogin: 'Back to Login',
+    // 密码规则提示
+    passwordRuleHint: 'Password must be 8-20 characters, containing at least two of: letters, numbers, special characters',
   },
   // 协议弹窗国际化
   agreement: {
