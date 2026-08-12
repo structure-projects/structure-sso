@@ -30,6 +30,6 @@ jobs:
           context: ./
           push: true
           tags: |
-            registry.cn-hangzhou.aliyuncs.com/structured/structured-sso:${{ env.RELEASE_VERSION }}
-            registry.cn-hangzhou.aliyuncs.com/structured/structured-sso:latest
+            registry.cn-hangzhou.aliyuncs.com/structured/structure-sso:${{ env.RELEASE_VERSION }}
+            registry.cn-hangzhou.aliyuncs.com/structured/structure-sso:latest
 
