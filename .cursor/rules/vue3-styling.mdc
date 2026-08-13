@@ -1,0 +1,80 @@
+---
+description: Vue 3 样式规范。编写 CSS/SCSS 时生效。scoped、UnoCSS、CSS 变量。
+triggers:
+  - 样式
+  - CSS
+  - SCSS
+  - style
+  - scoped
+  - UnoCSS
+priority: medium
+alwaysApply: false
+globs:
+  - "**/*.vue"
+  - "**/*.css"
+  - "**/*.scss"
+category: architecture
+stack: vue3
+role: developer
+maturity: stable
+related-skills:
+  - coding
+reads-before-action:
+  - wiki/vue3/styling.md
+when-to-use: 编写或修改样式时
+when-not-to-use: 仅修改 JS/TS 逻辑
+version: "0.3.0"
+since: "2026-08-13"
+---
+
+> **通用规范** (已安装于 `wiki/_common/`):
+> - `wiki/_common/api-design.md`: API 设计通用原则
+> - `wiki/_common/architecture.md`: 分层架构通用原则
+> - `wiki/_common/cache-design.md`: 缓存设计规范
+> - `wiki/_common/ci-cd-pipeline.md`: CI/CD 流水线规范
+> - `wiki/_common/code-review-checklist.md`: Code Review 通用原则
+> - `wiki/_common/coding-conventions.md`: 通用编码约定（coding-conventions）
+> - `wiki/_common/concurrency.md`: 并发编程规范
+> - `wiki/_common/database-design.md`: 数据库设计规范
+> - `wiki/_common/deployment.md`: 部署规范
+> - `wiki/_common/detailed-design.md`: 详细设计（LLD）规范
+> - `wiki/_common/distributed-transaction.md`: 分布式事务规范
+> - `wiki/_common/docker.md`: Docker 规范
+> - `wiki/_common/documentation.md`: 文档管理规范
+> - `wiki/_common/error-handling.md`: 错误处理公约
+> - `wiki/_common/git-workflow.md`: Git 工作流（分级规范）
+> - `wiki/_common/git.md`: Git 分支策略与工作流规范
+> - `wiki/_common/github-workflow.md`: GitHub 工作流（gh CLI + PR + Release）
+> - `wiki/_common/high-level-design.md`: 概要设计（HLD）规范
+> - `wiki/_common/kubernetes.md`: Kubernetes 规范
+> - `wiki/_common/legacy-onboarding.md`: 老项目接入指南
+> - `wiki/_common/logging.md`: 日志规范
+> - `wiki/_common/maven-publish.md`: Maven 发布规范
+> - `wiki/_common/messaging.md`: 消息队列规范
+> - `wiki/_common/migration-strategies.md`: 迁移策略详解
+> - `wiki/_common/model-design.md`: 模型设计规范
+> - `wiki/_common/naming.md`: 通用命名规范
+> - `wiki/_common/npm-publish.md`: npm 发布规范
+> - `wiki/_common/observability.md`: 可观测性规范
+> - `wiki/_common/performance.md`: 性能优化规范
+> - `wiki/_common/project-form-decision.md`: 项目形态决策指南
+> - `wiki/_common/project-structure.md`: 项目结构约定
+> - `wiki/_common/requirement-analysis.md`: 需求分析规范
+> - `wiki/_common/security.md`: 安全基线
+> - `wiki/_common/testing-strategies.md`: 测试策略
+> - `wiki/_common/transaction.md`: 本地事务规范
+> - `wiki/_common/version-management.md`: 版本管理规范
+> 
+> 在编码决策前应加载对应规范文件。
+
+
+# Vue 3 样式规范
+
+## 关键规则
+
+- MUST use scoped styles
+- SHOULD use UnoCSS atomic classes first
+- MUST NOT use inline styles (style="")
+- CSS 变量 for theme switching
+- 深度选择器 MUST use :deep()
+- SCSS nesting max 3 levels
