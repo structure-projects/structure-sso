@@ -39,6 +39,8 @@ jobs:
         with:
           context: ./
           push: true
+          provenance: false
+          sbom: false
           tags: |
             registry.cn-hangzhou.aliyuncs.com/yunjida/structure-sso:${{ env.RELEASE_VERSION }}
             registry.cn-hangzhou.aliyuncs.com/yunjida/structure-sso:latest
