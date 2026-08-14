@@ -201,3 +201,126 @@ export interface SocialChannelDTO {
   scope?: string;
 }
 
+/**
+ * 二维码状态
+ */
+export type QRCodeStatus = 'PENDING' | 'WAITING' | 'SCANNED' | 'CONFIRMED' | 'EXPIRED';
+
+/**
+ * 创建二维码请求
+ */
+export interface QRCodeCreateRequest {
+  /**
+   * 应用ID
+   */
+  appId?: string;
+  /**
+   * 回调地址
+   */
+  redirectUri?: string;
+  /**
+   * OAuth2 state参数
+   */
+  state?: string;
+  /**
+   * PKCE code_challenge (Base64Url-encoded SHA-256 of code_verifier)
+   */
+  codeChallenge?: string;
+  /**
+   * PKCE 挑战方法，固定为 S256
+   */
+  codeChallengeMethod?: string;
+}
+
+/**
+ * 创建二维码响应
+ */
+export interface QRCodeCreateResponse {
+  /**
+   * 二维码ID
+   */
+  qrcodeId: string;
+  /**
+   * 二维码图片 Base64 (data:image/png;base64,...)
+   */
+  qrcodeImage: string;
+  /**
+   * 扫码后打开的确认页面 URL
+   */
+  confirmUrl: string;
+  /**
+   * 过期时间戳（毫秒）
+   */
+  expireTime: number;
+}
+
+/**
+ * 二维码状态响应
+ */
+export interface QRCodeStatusResponse {
+  /**
+   * 状态
+   */
+  status: QRCodeStatus;
+  /**
+   * 授权码（CONFIRMED 状态时由服务端生成）
+   */
+  authCode?: string;
+  /**
+   * OAuth2 state（CONFIRMED 状态时由服务端生成）
+   */
+  state?: string;
+  /**
+   * 过期时间戳（毫秒）
+   */
+  expireTime?: number;
+}
+
+/**
+ * 更新二维码状态请求
+ */
+export interface QRCodeUpdateStatusRequest {
+  /**
+   * 二维码ID
+   */
+  qrcodeId: string;
+  /**
+   * 状态
+   */
+  status: QRCodeStatus;
+  /**
+   * 授权码
+   */
+  authCode?: string;
+  /**
+   * PKCE code_verifier
+   */
+  codeVerifier?: string;
+  /**
+   * state
+   */
+  state?: string;
+}
+
+/**
+ * 二维码登录请求
+ */
+export interface QRCodeLoginRequest {
+  /**
+   * 二维码ID
+   */
+  qrcodeId: string;
+  /**
+   * 授权码
+   */
+  authCode: string;
+  /**
+   * PKCE code_verifier
+   */
+  codeVerifier: string;
+  /**
+   * state
+   */
+  state: string;
+}
+

@@ -142,8 +142,8 @@ export default {
   },
   // 忘记密码页面国际化
   forgotPassword: {
-    title: '忘记密码',
-    subtitle: '通过手机号验证找回密码',
+    title: '找回密码',
+    subtitle: '通过身份验证找回密码',
     phone: '注册的手机号',
     smsCode: '短信验证码',
     newPassword: '新密码',
@@ -151,9 +151,31 @@ export default {
     resendSmsCode: '重新获取',
     resetPassword: '重置密码',
     // 步骤
-    stepVerifyPhone: '验证手机号',
+    stepInputAccount: '输入账号',
+    stepVerifyIdentity: '身份验证',
     stepSetPassword: '设置新密码',
     stepComplete: '完成',
+    // 第一步：输入账号
+    accountPlaceholder: '请输入用户名 / 手机号 / 邮箱',
+    accountRequired: '请输入账号信息',
+    findAccount: '查找账号',
+    accountNotFound: '未找到该账号，请检查输入',
+    // 第二步：身份验证
+    verifyMethodTitle: '请选择验证方式',
+    verifyBySecurityQuestion: '密保问题验证',
+    verifyByPhone: '手机验证码验证',
+    securityQuestionDesc: '回答您设置的密保问题',
+    phoneVerifyDesc: '通过绑定的手机号接收验证码',
+    // 密保问题
+    securityQuestions: '密保问题',
+    answerPlaceholder: '请输入答案',
+    answerRequired: '请输入答案',
+    submitAnswers: '提交验证',
+    // 手机验证码
+    phonePlaceholder: '请输入手机号',
+    smsCodePlaceholder: '请输入验证码',
+    sendSmsCode: '发送验证码',
+    verifyPhoneCode: '验证',
     // 成功页面
     resetSuccess: '密码重置成功',
     resetSuccessDesc: '请使用新密码登录您的账号',
@@ -173,6 +195,12 @@ export default {
     resetPasswordFailed: '重置密码失败',
     // 手机号显示
     smsCodeSentTo: '已向 {phone} 发送验证码',
+    // 安全提示
+    securityAnswerError: '密保答案验证失败，请检查答案',
+    phoneNotBound: '该账号未绑定手机号',
+    goToLogin: '返回登录',
+    // 密码规则提示
+    passwordRuleHint: '密码长度为8-20位，需包含字母、数字和特殊字符中至少两种',
   },
   // 协议弹窗国际化
   agreement: {
@@ -244,5 +272,16 @@ export default {
     feature3: '安全可靠的企业级身份认证服务',
     qrHint: '使用微信或浏览器扫码下载',
     viewQRCode: '返回登录',
+  },
+  // OAuth2 国际化
+  oauth2: {
+    processing: '正在处理授权...',
+    error: '授权失败',
+    authorized: '授权成功',
+    redirecting: '正在跳转...',
+    requestAccess: '请求访问您的账户',
+    permissions: '请求的权限',
+    allow: '允许',
+    deny: '拒绝',
   },
 };

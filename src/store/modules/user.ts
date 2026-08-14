@@ -12,6 +12,17 @@ import { UserInfo } from "@/api/system/user/types";
 import { getUserInfoApi } from "@/api/system/user";
 import { md5 } from "@/utils/crypto";
 import { reactive, ref } from "vue";
+import { 
+  TokenResponse, 
+  UserInfoResponse,
+  getOAuthConfig,
+  saveToken,
+  getSavedToken,
+  clearToken,
+  isTokenExpired,
+  autoRefreshToken,
+  getUserInfo as fetchOAuthUserInfo
+} from "@/config/oauth";
 
 const STORAGE_KEYS = {
   USER_ROLES: "userRoles",
@@ -147,7 +158,34 @@ export const useUserStore = defineStore("user", () => {
     isLogin.value = false;
     clearUserInfo();
     clearRedirectUrl();
+    clearToken();
     resetRouter();
+  }
+
+  function setOAuthToken(token: TokenResponse) {
+    saveToken(token);
+  }
+
+  function getOAuthToken(): TokenResponse | null {
+    return getSavedToken();
+  }
+
+  function clearOAuthToken() {
+    clearToken();
+  }
+
+  function checkTokenExpired(): boolean {
+    return isTokenExpired();
+  }
+
+  async function refreshAccessToken(): Promise<TokenResponse | null> {
+    const config = getOAuthConfig();
+    return autoRefreshToken(config);
+  }
+
+  async function fetchUserInfoFromOAuth(accessToken: string): Promise<UserInfoResponse> {
+    const config = getOAuthConfig();
+    return fetchOAuthUserInfo(config, accessToken);
   }
 
   return {
@@ -163,6 +201,12 @@ export const useUserStore = defineStore("user", () => {
     saveRedirectUrl,
     getRedirectUrl,
     clearRedirectUrl,
+    setOAuthToken,
+    getOAuthToken,
+    clearOAuthToken,
+    checkTokenExpired,
+    refreshAccessToken,
+    fetchUserInfoFromOAuth,
   };
 });
 

@@ -35,10 +35,6 @@
             <span class="detail-label">{{ $t('loginSuccess.appName') }}：</span>
             <span class="detail-value">{{ appName }}</span>
           </div>
-          <div class="detail-item">
-            <span class="detail-label">{{ $t('loginSuccess.targetUrl') }}：</span>
-            <span class="detail-value redirect-url" :title="redirectUrl">{{ redirectUrl }}</span>
-          </div>
         </div>
       </div>
       
@@ -53,10 +49,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, getCurrentInstance } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useUserStore } from '@/store';
 import { CircleCheck, InfoFilled } from '@element-plus/icons-vue';
+import { getClientInfoApi } from '@/api/auth';
 
 const router = useRouter();
 const route = useRoute();
@@ -64,18 +61,28 @@ const userStore = useUserStore();
 
 const isAuthorizing = ref(false);
 const showAuthDialog = ref(false);
+const resolvedAppName = ref('');
 
 const redirectUrl = computed(() => {
   return route.query.redirect as string || '/';
 });
 
 const appName = computed(() => {
-  return route.query.appName as string || '当前应用';
+  return resolvedAppName.value || route.query.appName as string || '当前应用';
 });
 
 const needAuth = computed(() => {
   return route.query.needAuth === 'true';
 });
+
+function extractClientId(url: string): string | null {
+  try {
+    const parsed = new URL(url);
+    return parsed.searchParams.get('client_id');
+  } catch {
+    return null;
+  }
+}
 
 function handleRedirect() {
   const url = redirectUrl.value;
@@ -105,9 +112,21 @@ function handleCancel() {
   showAuthDialog.value = false;
 }
 
-onMounted(() => {
+onMounted(async () => {
   console.log('LoginSuccess mounted, redirectUrl:', redirectUrl.value, 'needAuth:', needAuth.value);
-  
+
+  const clientId = extractClientId(redirectUrl.value);
+  if (clientId) {
+    try {
+      const info = await getClientInfoApi(clientId);
+      if (info?.clientName) {
+        resolvedAppName.value = info.clientName;
+      }
+    } catch (e) {
+      console.warn('获取客户端信息失败:', e);
+    }
+  }
+
   if (needAuth.value) {
     showAuthDialog.value = true;
   } else {

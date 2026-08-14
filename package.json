@@ -1,11 +1,13 @@
 {
-  "name": "portal-sso",
+  "name": "@structure-projects/sso",
   "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "vitest run --passWithNoTests",
+    "type-check": "vue-tsc --noEmit"
   },
   "dependencies": {
     "@element-plus/icons-vue": "^2.3.1",
@@ -23,9 +25,14 @@
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.0.4",
+    "@vue/test-utils": "^2.4.6",
+    "jsdom": "^24.1.0",
     "sass": "^1.99.0",
     "terser": "^5.47.1",
-    "vite": "^5.2.8"
+    "typescript": "^5.4.5",
+    "vite": "^5.2.8",
+    "vitest": "^1.6.0",
+    "vue-tsc": "^2.0.19"
   },
   "license": "Apache-2.0"
 }

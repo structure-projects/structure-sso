@@ -1,217 +1,267 @@
 <template>
   <div class="qrcode-login">
     <div class="qrcode-container">
-      <div
-        :class="['qrcode-wrapper', { expired: isExpired, 'border-error': isExpired }]"
-        :style="{ width: '200px', height: '200px' }"
-      >
-        <div v-if="loading" class="qrcode-loading">
-          <el-icon class="is-loading" :size="40">
-            <Loading />
-          </el-icon>
-          <p>{{ $t('login.generatingQRCode') }}</p>
-        </div>
-        <div v-else-if="isExpired" class="qrcode-expired">
-          <el-icon :size="48">
-            <WarningFilled />
-          </el-icon>
-          <p>{{ $t('login.qrCodeExpired') }}</p>
-          <p class="expired-tip">{{ $t('login.qrCodeExpiredTip') }}</p>
-        </div>
+      <!-- 二维码图片（从后端 base64 生成） -->
+      <div class="qrcode-wrapper" v-loading="loading" element-loading-text="正在生成二维码...">
         <img
-          v-else
-          :src="qrcodeUrl"
-          alt="QR Code"
-          class="qrcode-image"
-          @load="handleQRCodeLoad"
+          v-if="qrCodeImage"
+          :src="qrCodeImage"
+          alt="扫码登录二维码"
+          :class="['qrcode-image', { 'is-expired': expired }]"
+          @error="onImageError"
+          @click="onImageClick"
         />
-      </div>
 
-      <div class="qrcode-actions">
-        <el-button
-          type="primary"
-          :loading="refreshing"
+        <!-- 失效遮罩：覆盖在二维码上方，支持点击刷新 -->
+        <div
+          v-if="expired && qrCodeImage"
+          class="qrcode-overlay"
           @click="refreshQRCode"
-          circle
         >
-          <template #icon>
-            <RefreshRight />
-          </template>
-        </el-button>
+          <el-icon :size="48" color="#f56c6c"><WarningFilled /></el-icon>
+          <p>二维码已失效</p>
+          <el-button type="primary" size="small" @click.stop="refreshQRCode">
+            刷新二维码
+          </el-button>
+        </div>
+
+        <div v-else-if="!qrCodeImage && !loading" class="qrcode-failed">
+          <el-icon :size="48"><WarningFilled /></el-icon>
+          <p>二维码生成失败</p>
+          <el-button type="primary" size="small" @click="refreshQRCode">
+            刷新二维码
+          </el-button>
+        </div>
       </div>
 
-      <div class="scan-status">
-        <div class="status-indicator" :class="scanStatus">
-          <div class="status-dot"></div>
-          <span class="status-text">{{ statusText }}</span>
-        </div>
-        <div class="status-description">
-          <p v-if="scanStatus === 'waiting'">{{ $t('login.scanQRCode').replace('{appName}', currentAppName) }}</p>
-          <p v-else-if="scanStatus === 'scanned'">{{ $t('login.qrCodeScanned') }}</p>
-          <p v-else-if="scanStatus === 'logging'">{{ $t('login.loggingIn') }}</p>
-        </div>
+      <!-- 状态提示 -->
+      <div class="qrcode-tip" v-if="!loading && !expired && qrCodeImage">
+        <template v-if="waiting">
+          <el-icon class="is-loading"><Loading /></el-icon>
+          <span>等待扫码确认...</span>
+        </template>
+        <template v-else-if="scanning">
+          <el-icon color="#409eff"><View /></el-icon>
+          <span>已扫码，请在手机上确认登录</span>
+        </template>
       </div>
+    </div>
+
+    <div class="qrcode-desc">
+      <p>请使用 <strong>App</strong> 扫码登录</p>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, getCurrentInstance } from 'vue';
-import { RefreshRight, Loading, WarningFilled } from '@element-plus/icons-vue';
-import { getOAuthConfig, generateState, generateCodeVerifier, generateCodeChallenge } from '@/config/oauth';
+import { ref, onMounted, onUnmounted } from 'vue';
+import { Loading, View, WarningFilled } from '@element-plus/icons-vue';
+import { ElMessage } from 'element-plus';
 
-interface Props {
-  formData?: any;
-}
+import {
+  createQRCodeApi,
+  qrcodeLoginApi,
+  subscribeQRCodeSSE,
+  generateCodeVerifier,
+  generateCodeChallenge,
+  type QRCodeStatusResponse,
+  type QRCodeStatus
+} from '@/api/auth';
+import { saveToken, type TokenResponse } from '@/config/oauth';
 
-const props = defineProps<Props>();
 const emit = defineEmits<{
-  (e: 'update:form-data', data: any): void;
-  (e: 'login', data: any): void;
+  login: [result: Record<string, unknown>];
 }>();
 
-const { proxy } = getCurrentInstance() || {};
-
-const qrcodeUrl = ref('');
 const loading = ref(true);
-const refreshing = ref(false);
-const isExpired = ref(false);
-const scanStatus = ref<'waiting' | 'scanned' | 'logging'>('waiting');
+const waiting = ref(false);
+const scanning = ref(false);
+const expired = ref(false);
+
 const qrcodeId = ref('');
-const expireTimer = ref<number | null>(null);
-const pollTimer = ref<number | null>(null);
-const currentAppName = '应用';
-const codeVerifier = ref('');
+const qrCodeImage = ref('');
+
+// PKCE
+let codeVerifier = '';
+const authCode = ref('');
 const state = ref('');
 
-const statusText = computed(() => {
-  const statusMap = {
-    waiting: proxy?.$t('login.scanStatusWaiting'),
-    scanned: proxy?.$t('login.scanStatusScanned'),
-    logging: proxy?.$t('login.scanStatusLogging'),
-  };
-  return statusMap[scanStatus.value];
-});
+// SSE 取消控制器
+let abortController: AbortController | null = null;
 
+/**
+ * 生成二维码
+ */
 async function generateQRCode() {
   loading.value = true;
-  isExpired.value = false;
-  qrcodeUrl.value = '';
-  
+  waiting.value = false;
+  scanning.value = false;
+  expired.value = false;
+  qrCodeImage.value = '';
+
   try {
-    const config = getOAuthConfig();
-    state.value = generateState();
-    codeVerifier.value = generateCodeVerifier();
-    const codeChallenge = await generateCodeChallenge(codeVerifier.value);
-    
-    qrcodeId.value = `qr_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    
-    const loginUrl = new URL(window.location.origin + '/phone-login');
-    loginUrl.searchParams.set('state', state.value);
-    loginUrl.searchParams.set('code_challenge', codeChallenge);
-    loginUrl.searchParams.set('code_challenge_method', 'S256');
-    loginUrl.searchParams.set('qrcode_id', qrcodeId.value);
-    loginUrl.searchParams.set('client_id', config.clientId);
-    loginUrl.searchParams.set('redirect_uri', config.redirectUri);
-    loginUrl.searchParams.set('response_type', 'code');
-    loginUrl.searchParams.set('scope', config.scope);
-    
-    qrcodeUrl.value = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(loginUrl.toString())}&t=${Date.now()}`;
-    
-    localStorage.setItem('qr_code_verifier', codeVerifier.value);
-    localStorage.setItem('qr_state', state.value);
-    localStorage.setItem('qr_id', qrcodeId.value);
-  } catch (error) {
-    console.error('Failed to generate QR code:', error);
+    // 1. PKCE: 生成 code_verifier 和 code_challenge
+    codeVerifier = generateCodeVerifier();
+    const codeChallenge = await generateCodeChallenge(codeVerifier);
+
+    // 2. 请求后端创建二维码（含 PKCE challenge + base64 图片）
+    const response = await createQRCodeApi({
+      appId: 'default',
+      codeChallenge,
+      codeChallengeMethod: 'S256'
+    });
+
+    qrcodeId.value = response.qrcodeId;
+    qrCodeImage.value = response.qrcodeImage;
+    waiting.value = true;
+
+    // 3. 启动 SSE 订阅状态变更
+    startSSESubscription(response.qrcodeId);
+
+  } catch (error: any) {
+    ElMessage.error(error?.message || '生成二维码失败，请重试');
+    expired.value = true;
+  } finally {
     loading.value = false;
   }
 }
 
-function handleQRCodeLoad() {
-  loading.value = false;
-  startExpireTimer();
-  startScanPoll();
+/**
+ * 通过 SSE 订阅二维码状态变更（替代轮询）
+ */
+function startSSESubscription(id: string) {
+  // 取消之前的 SSE 连接
+  stopSSESubscription();
+
+  abortController = new AbortController();
+
+  subscribeQRCodeSSE(
+    id,
+    {
+      onStatusChange: (data: QRCodeStatusResponse) => {
+        handleStatusChange(data);
+      },
+      onTimeout: () => {
+        console.log('SSE 连接超时，二维码可能已过期');
+        expired.value = true;
+        waiting.value = false;
+        scanning.value = false;
+        stopSSESubscription();
+      },
+      onError: () => {
+        // EventSource 会自动重连，不需要手动处理
+        console.log('SSE 连接异常，等待自动重连...');
+      }
+    },
+    abortController.signal
+  );
 }
 
-function startExpireTimer() {
-  if (expireTimer.value) {
-    clearTimeout(expireTimer.value);
+/**
+ * 处理状态变更
+ */
+async function handleStatusChange(data: QRCodeStatusResponse) {
+  switch (data.status as QRCodeStatus) {
+    case 'WAITING':
+      waiting.value = true;
+      scanning.value = false;
+      break;
+
+    case 'SCANNED':
+      waiting.value = false;
+      scanning.value = true;
+      break;
+
+    case 'CONFIRMED':
+      waiting.value = false;
+      scanning.value = false;
+      stopSSESubscription();
+
+      // 保存 authCode 和 state 用于登录
+      authCode.value = data.authCode || '';
+      state.value = data.state || '';
+
+      // 使用 PKCE code_verifier 完成登录
+      await doQRCodeLogin();
+      break;
+
+    case 'EXPIRED':
+      waiting.value = false;
+      scanning.value = false;
+      expired.value = true;
+      stopSSESubscription();
+      break;
+
+    case 'CANCELLED':
+      waiting.value = true;
+      scanning.value = false;
+      break;
   }
-
-  expireTimer.value = window.setTimeout(() => {
-    isExpired.value = true;
-    stopScanPoll();
-    clearQRCodeData();
-  }, 300000);
 }
 
-function startScanPoll() {
-  if (pollTimer.value) {
-    clearInterval(pollTimer.value);
-  }
-
-  pollTimer.value = window.setInterval(() => {
-    checkScanStatus();
-  }, 2000);
-}
-
-function stopScanPoll() {
-  if (pollTimer.value) {
-    clearInterval(pollTimer.value);
-    pollTimer.value = null;
+/**
+ * 停止 SSE 订阅
+ */
+function stopSSESubscription() {
+  if (abortController) {
+    abortController.abort();
+    abortController = null;
   }
 }
 
-function clearQRCodeData() {
-  localStorage.removeItem('qr_code_verifier');
-  localStorage.removeItem('qr_state');
-  localStorage.removeItem('qr_id');
-}
-
-function checkScanStatus() {
-  if (isExpired.value || !qrcodeId.value) return;
-
-  const authCode = localStorage.getItem('auth_code');
-  const qrId = localStorage.getItem('qr_id');
-  
-  if (authCode && qrId === qrcodeId.value) {
-    scanStatus.value = 'logging';
-    stopScanPoll();
-    handleLoginSuccess(authCode);
-  }
-}
-
-function handleLoginSuccess(authCode: string) {
-  setTimeout(() => {
-    emit('login', {
-      type: 'qrcode',
+/**
+ * 二维码登录（获取 token）
+ */
+async function doQRCodeLogin() {
+  try {
+    const loginResult = await qrcodeLoginApi({
       qrcodeId: qrcodeId.value,
-      authCode: authCode,
-      codeVerifier: codeVerifier.value,
-      state: state.value,
+      authCode: authCode.value,
+      codeVerifier: codeVerifier,
+      state: state.value
     });
-    clearQRCodeData();
-    localStorage.removeItem('auth_code');
-  }, 1500);
+
+    if (loginResult?.accessToken) {
+      saveToken({
+        access_token: loginResult.accessToken,
+        token_type: loginResult.tokenType || 'Bearer',
+        expires_in: loginResult.expiresIn || 3600,
+        refresh_token: loginResult.refreshToken,
+        scope: (loginResult as any).scope || ''
+      } as TokenResponse);
+    }
+    ElMessage.success('登录成功');
+    emit('login', { loginType: 'qrcode' });
+  } catch (error: any) {
+    ElMessage.error(error?.message || '二维码登录失败');
+    await refreshQRCode();
+  }
 }
 
-function refreshQRCode() {
-  refreshing.value = true;
-  stopScanPoll();
-  clearQRCodeData();
+/**
+ * 刷新二维码
+ */
+async function refreshQRCode() {
+  stopSSESubscription();
+  await generateQRCode();
+}
 
-  if (expireTimer.value) {
-    clearTimeout(expireTimer.value);
-    expireTimer.value = null;
+/**
+ * 图片加载失败处理
+ */
+function onImageError() {
+  ElMessage.error('二维码图片加载失败');
+  qrCodeImage.value = '';
+  expired.value = true;
+}
+
+/**
+ * 点击二维码刷新（仅在失效状态下触发）
+ */
+function onImageClick() {
+  if (expired.value) {
+    refreshQRCode();
   }
-
-  scanStatus.value = 'waiting';
-  isExpired.value = false;
-
-  setTimeout(() => {
-    generateQRCode();
-    refreshing.value = false;
-  }, 500);
 }
 
 onMounted(() => {
@@ -219,153 +269,90 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
-  if (expireTimer.value) {
-    clearTimeout(expireTimer.value);
-  }
-  stopScanPoll();
-  clearQRCodeData();
-});
-
-defineExpose({
-  refreshQRCode,
-  isExpired,
-  scanStatus,
+  stopSSESubscription();
 });
 </script>
 
 <style lang="scss" scoped>
 .qrcode-login {
   display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 20px 0;
-}
-
-.qrcode-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 20px;
-}
-
-.qrcode-wrapper {
-  position: relative;
-  border: 2px solid var(--el-border-color);
-  border-radius: 8px;
-  overflow: hidden;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background: white;
-  transition: all 0.3s ease;
-
-  &.border-error {
-    border-color: #ff4d4f;
-    animation: shake 0.5s ease-in-out;
-  }
-}
-
-@keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-5px); }
-  75% { transform: translateX(5px); }
-}
-
-.qrcode-image {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-}
-
-.qrcode-loading,
-.qrcode-expired {
-  display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  color: var(--el-text-color-regular);
-  font-size: 14px;
-  text-align: center;
-  padding: 20px;
-}
+  padding: 40px 20px;
 
-.qrcode-expired {
-  color: #ff4d4f;
-
-  .expired-tip {
-    font-size: 12px;
-    color: var(--el-text-color-secondary);
+  .qrcode-container {
+    position: relative;
+    width: 300px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
   }
-}
 
-.qrcode-actions {
-  display: flex;
-  justify-content: center;
-  margin-top: 8px;
-}
-
-.scan-status {
-  text-align: center;
-}
-
-.status-indicator {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  margin-bottom: 8px;
-  font-size: 16px;
-  font-weight: 600;
-
-  &.waiting { color: var(--el-color-primary); }
-  &.scanned { color: #52c41a; }
-  &.logging { color: #faad14; }
-}
-
-.status-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  animation: pulse 1.5s infinite;
-
-  .waiting & {
-    background: var(--el-color-primary);
-  }
-  .scanned & {
-    background: #52c41a;
-  }
-  .logging & {
-    background: #faad14;
-  }
-}
-
-@keyframes pulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.5; transform: scale(1.2); }
-}
-
-.status-description {
-  font-size: 14px;
-  color: var(--el-text-color-secondary);
-
-  p {
-    margin: 4px 0;
-  }
-}
-
-@media (max-width: 768px) {
   .qrcode-wrapper {
-    width: 180px !important;
-    height: 180px !important;
+    position: relative;
+    width: 300px;
+    height: 300px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f5f7fa;
+    border-radius: 12px;
+    border: 1px solid #e4e7ed;
+    overflow: hidden;
+
+    .qrcode-image {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      padding: 8px;
+      box-sizing: border-box;
+      cursor: default;
+
+      &.is-expired {
+        filter: grayscale(100%);
+        opacity: 0.6;
+        cursor: pointer;
+      }
+    }
+
+    .qrcode-overlay,
+    .qrcode-failed {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      background: rgba(255, 255, 255, 0.92);
+      color: #606266;
+      cursor: pointer;
+
+      p {
+        margin: 0;
+        font-size: 14px;
+      }
+    }
   }
 
-  .qrcode-loading,
-  .qrcode-expired {
+  .qrcode-tip {
+    margin-top: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: #606266;
+  }
+
+  .qrcode-desc {
+    margin-top: 24px;
+    text-align: center;
+    color: #909399;
     font-size: 13px;
 
-    .expired-tip {
-      font-size: 11px;
+    p {
+      margin: 0;
     }
   }
 }

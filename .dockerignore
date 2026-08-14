@@ -1,0 +1,8 @@
+# White-list: only keep what the Dockerfile needs
+**/*
+
+# Keep built output
+!dist/
+
+# Keep nginx config template
+!nginx.template
