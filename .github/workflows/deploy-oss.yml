@@ -1,20 +1,46 @@
 name: deploy-oss
 
 on:
-  # 发 release 时自动发布；也可随时手动触发（可在 UI 选择分支或 tag）
+  # 发 release 时自动发布到生产；也可随时手动触发（可在 UI 选择分支或 tag 与环境）
   release:
     types: [published]
   workflow_dispatch:
+    inputs:
+      environment:
+        description: 部署环境
+        type: choice
+        options: [prod, test]
+        default: prod
 
 # 共用存储桶靠该目录隔离，同时作为 vite base；改此处即可整体迁移
 env:
   OSS_DIR: sso
 
 concurrency:
-  group: deploy-oss-sso
+  group: deploy-oss-sso-${{ inputs.environment || 'prod' }}
   cancel-in-progress: false
 
 jobs:
+  # release 触发时 inputs 为空，兜底到 prod
+  resolve-env:
+    runs-on: ubuntu-latest
+    outputs:
+      mode: ${{ steps.r.outputs.mode }}
+      prefix: ${{ steps.r.outputs.prefix }}
+    steps:
+      - id: r
+        env:
+          DEPLOY_ENV: ${{ inputs.environment || 'prod' }}
+        run: |
+          if [ "$DEPLOY_ENV" = "test" ]; then
+            echo "mode=test"    >> "$GITHUB_OUTPUT"
+            echo "prefix=test/" >> "$GITHUB_OUTPUT"
+          else
+            echo "mode=production" >> "$GITHUB_OUTPUT"
+            echo "prefix="          >> "$GITHUB_OUTPUT"
+          fi
+          echo "部署环境: $DEPLOY_ENV"
+
   test:
     runs-on: ubuntu-latest
     steps:
@@ -41,7 +67,7 @@ jobs:
         run: npm test
 
   build:
-    needs: test
+    needs: [test, resolve-env]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -63,11 +89,13 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      # hash 模式下 OAuth 回调地址带 #，须与 auth-service 注册的 redirect-uri 保持一致
+      # --mode 决定读取 .env.production 还是 .env.test（网关地址、OAuth 配置由其提供）
+      # --base 必须与下面 ossutil 的上传前缀一致，否则静态资源 404
       - name: Build
-        run: npm run build -- --base=/${{ env.OSS_DIR }}/
-        env:
-          VITE_OAUTH_REDIRECT_URI: ${{ secrets.SSO_OAUTH_REDIRECT_URI }}
+        run: |
+          npm run build -- \
+            --mode=${{ needs.resolve-env.outputs.mode }} \
+            --base=/${{ needs.resolve-env.outputs.prefix }}${{ env.OSS_DIR }}/
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
@@ -76,7 +104,7 @@ jobs:
           path: dist
 
   deploy-oss:
-    needs: build
+    needs: [build, resolve-env]
     runs-on: ubuntu-latest
     steps:
       - name: Download build artifact
@@ -94,7 +122,9 @@ jobs:
         run: |
           ossutil config -e ${{ secrets.ALIYUN_OSS_ENDPOINT }} -i ${{ secrets.ALIYUN_ACCESS_KEY_ID }} -k ${{ secrets.ALIYUN_ACCESS_KEY_SECRET }} -L CH
 
-      # --delete 严格限定在 $OSS_DIR/ 前缀内，不影响同存储桶其它子项目
+      # --delete 严格限定在 {prefix}$OSS_DIR/ 内，不影响同存储桶其它子项目与其它环境
       - name: Deploy to Aliyun OSS
         run: |
-          ossutil sync dist/ oss://${{ secrets.ALIYUN_OSS_BUCKET }}/${{ env.OSS_DIR }}/ --delete --update
+          ossutil sync dist/ \
+            oss://${{ secrets.ALIYUN_OSS_BUCKET }}/${{ needs.resolve-env.outputs.prefix }}${{ env.OSS_DIR }}/ \
+            --delete --update
