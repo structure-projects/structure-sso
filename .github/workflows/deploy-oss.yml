@@ -1,0 +1,100 @@
+name: deploy-oss
+
+on:
+  # 发 release 时自动发布；也可随时手动触发（可在 UI 选择分支或 tag）
+  release:
+    types: [published]
+  workflow_dispatch:
+
+# 共用存储桶靠该目录隔离，同时作为 vite base；改此处即可整体迁移
+env:
+  OSS_DIR: sso
+
+concurrency:
+  group: deploy-oss-sso
+  cancel-in-progress: false
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Cache npm
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.json', '**/package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-npm-
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run tests
+        run: npm test
+
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Cache npm
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.json', '**/package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-npm-
+
+      - name: Install dependencies
+        run: npm install
+
+      # hash 模式下 OAuth 回调地址带 #，须与 auth-service 注册的 redirect-uri 保持一致
+      - name: Build
+        run: npm run build -- --base=/${{ env.OSS_DIR }}/
+        env:
+          VITE_OAUTH_REDIRECT_URI: ${{ secrets.SSO_OAUTH_REDIRECT_URI }}
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sso-dist
+          path: dist
+
+  deploy-oss:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: sso-dist
+          path: dist
+
+      - name: Install ossutil
+        run: |
+          wget http://gosspublic.alicdn.com/ossutil/1.7.18/ossutil64 -O /usr/local/bin/ossutil
+          chmod +x /usr/local/bin/ossutil
+
+      - name: Configure Aliyun OSS credentials
+        run: |
+          ossutil config -e ${{ secrets.ALIYUN_OSS_ENDPOINT }} -i ${{ secrets.ALIYUN_ACCESS_KEY_ID }} -k ${{ secrets.ALIYUN_ACCESS_KEY_SECRET }} -L CH
+
+      # --delete 严格限定在 $OSS_DIR/ 前缀内，不影响同存储桶其它子项目
+      - name: Deploy to Aliyun OSS
+        run: |
+          ossutil sync dist/ oss://${{ secrets.ALIYUN_OSS_BUCKET }}/${{ env.OSS_DIR }}/ --delete --update

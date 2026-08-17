@@ -1,4 +1,4 @@
-import { createRouter, createWebHistory } from "vue-router"
+import { createRouter, createWebHashHistory } from "vue-router"
 import LoginLayout from "@/layout/LoginLayout.vue"
 
 const routes = [
@@ -83,7 +83,8 @@ const routes = [
 ]
 
 const router = createRouter({
-  history: createWebHistory(),
+  // hash 模式：部署到 OSS 子目录时无需服务端 rewrite 即可直接刷新子路由
+  history: createWebHashHistory(),
   routes,
   scrollBehavior: () => ({ left: 0, top: 0 }),
 })
@@ -91,7 +92,7 @@ const router = createRouter({
 export const constantRoutes = routes
 export function resetRouter() {
   const newRouter = createRouter({
-    history: createWebHistory(),
+    history: createWebHashHistory(),
     routes,
   })
   router.matcher = newRouter.matcher
