@@ -271,12 +271,13 @@ export function subscribeQRCodeSSE(
   callbacks: QRCodeSSECallbacks,
   signal?: AbortSignal
 ): void {
-  // 通过 Vite 代理访问后端 SSE 端点
-  // Vite proxy: /web-api/auth → auth-service:18103 (strip /web-api/auth/)
+  // dev 走 Vite 代理(/web-api/auth → auth-service:18103);OSS 静态托管下
+  // VITE_APP_BASE_API 是网关绝对地址,此时为跨源连接
   const baseApi = import.meta.env.VITE_APP_BASE_API || '/web-api';
   const sseUrl = `${baseApi}/auth/api/auth/qrcode/subscribe?qrcodeId=${encodeURIComponent(qrcodeId)}`;
 
-  const eventSource = new EventSource(sseUrl);
+  // 跨源 EventSource 默认不携带 cookie,须与 request.ts 的 withCredentials 保持一致
+  const eventSource = new EventSource(sseUrl, { withCredentials: true });
 
   eventSource.addEventListener('status', (event: MessageEvent) => {
     try {

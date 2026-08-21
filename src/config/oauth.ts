@@ -103,7 +103,7 @@ export function getOAuthConfig(): OAuthConfig {
     baseUrl: import.meta.env.VITE_OAUTH_BASE_URL || 'http://localhost:18103',
     clientId: import.meta.env.VITE_OAUTH_CLIENT_ID || 'test-client',
     clientSecret: import.meta.env.VITE_OAUTH_CLIENT_SECRET || 'secret',
-    redirectUri: import.meta.env.VITE_OAUTH_REDIRECT_URI || 'http://localhost:17103/callback',
+    redirectUri: import.meta.env.VITE_OAUTH_REDIRECT_URI || 'http://localhost:17103/#/oauth2/callback',
     scope: import.meta.env.VITE_OAUTH_SCOPE || 'read write',
     authorizeEndpoint: import.meta.env.VITE_OAUTH_AUTHORIZE_ENDPOINT || '/oauth2/authorize',
     tokenEndpoint: import.meta.env.VITE_OAUTH_TOKEN_ENDPOINT || '/oauth2/token',
